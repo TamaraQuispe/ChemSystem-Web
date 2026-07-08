@@ -8,6 +8,7 @@ import RoleSelection from './pages/auth/RoleSelection';
 import DashboardLayout from './layouts/DashboardLayout';
 import Home from './pages/dashboard/Home';
 import Simulators from './pages/simulators/Simulators';
+import SimulatorPage from './pages/simulators/SimulatorPage';
 import Analytics from './pages/analytics/Analytics';
 import Community from './pages/community/Community';
 import Settings from './pages/settings/Settings';
@@ -64,13 +65,8 @@ function App() {
           <Route index element={<Home />} />
           <Route path="home" element={<Home />} />
           <Route path="simulators" element={<Simulators />} />
-          
-          {/* Advanced Modules */}
-          <Route path="simulators/electrolysis" element={
-            <Suspense fallback={<LoadingFallback />}><ElectrolysisPage /></Suspense>
-          } />
-          <Route path="simulators/catalysis" element={
-            <Suspense fallback={<LoadingFallback />}><CatalysisPage /></Suspense>
+          <Route path="simulators/:id" element={
+            <Suspense fallback={<LoadingFallback />}><SimulatorPage /></Suspense>
           } />
           <Route path="quizzes/molecular" element={
             <Suspense fallback={<LoadingFallback />}><QuizPage /></Suspense>

@@ -3,113 +3,23 @@ import { Lightbulb } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { 
-  Beaker, 
-  Thermometer, 
-  Zap, 
-  Layers, 
-  FlaskConical, 
-  Microscope, 
   Clock,
   Leaf,
-  Atom,
   ChevronLeft,
   ChevronRight,
   Check,
   Award,
   Sparkles,
-  Activity
+  FlaskConical,
+  Beaker,
+  Layers,
+  Atom,
 } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import PeriodicTable from '../../components/simulators/PeriodicTable';
+import SIMULATORS from '../../data/simulators';
 import { cn } from '../../utils/cn';
-
-const simulators = [
-  {
-    id: 'periodic-table',
-    title: 'Tabla Periódica Interactiva',
-    description: 'Explora propiedades atómicas, configuraciones electrónicas y tendencias periódicas en tiempo real.',
-    icon: Layers,
-    difficulty: 'Fácil',
-    difficultyKey: 'Básico',
-    xp: 150,
-    time: '10 min',
-    color: 'text-blue-500',
-    bg: 'bg-blue-50'
-  },
-  {
-    id: 'balance',
-    title: 'Balanceo de Ecuaciones',
-    description: 'Domina la estequiometría balanceando reacciones complejas con retroalimentación instantánea.',
-    icon: Beaker,
-    difficulty: 'Intermedio',
-    difficultyKey: 'Intermedio',
-    xp: 300,
-    time: '15 min',
-    color: 'text-purple-500',
-    bg: 'bg-purple-50'
-  },
-  {
-    id: 'matter-states',
-    title: 'Estados de la Materia',
-    description: 'Simulación molecular para observar cambios de fase bajo diferentes presiones y temperaturas.',
-    icon: Thermometer,
-    difficulty: 'Fácil',
-    difficultyKey: 'Básico',
-    xp: 200,
-    time: '12 min',
-    color: 'text-orange-500',
-    bg: 'bg-orange-50'
-  },
-  {
-    id: 'bonding',
-    title: 'Laboratorio de Enlaces',
-    description: 'Crea moléculas y visualiza enlaces iónicos y covalentes en 3D.',
-    icon: Zap,
-    difficulty: 'Avanzado',
-    difficultyKey: 'Avanzado',
-    xp: 500,
-    time: '25 min',
-    color: 'text-emerald-500',
-    bg: 'bg-emerald-50'
-  },
-  {
-    id: 'titration',
-    title: 'Simulador de Titulación',
-    description: 'Realiza valoraciones ácido-base precisas con indicadores digitales.',
-    icon: FlaskConical,
-    difficulty: 'Avanzado',
-    difficultyKey: 'Avanzado',
-    xp: 450,
-    time: '20 min',
-    color: 'text-red-500',
-    bg: 'bg-red-50'
-  },
-  {
-    id: 'spectrum',
-    title: 'Espectroscopía Atómica',
-    description: 'Analiza líneas de emisión y absorción de diferentes elementos químicos.',
-    icon: Microscope,
-    difficulty: 'Intermedio',
-    difficultyKey: 'Intermedio',
-    xp: 350,
-    time: '18 min',
-    color: 'text-indigo-500',
-    bg: 'bg-indigo-50'
-  },
-  {
-    id: 'catalysis',
-    title: 'Simulador de Catálisis',
-    description: 'Laboratorio interactivo de catálisis molecular con visualización 2D, predicciones IA y cinética en tiempo real.',
-    icon: Activity,
-    difficulty: 'Intermedio',
-    difficultyKey: 'Intermedio',
-    xp: 500,
-    time: '30 min',
-    color: 'text-cyan-500',
-    bg: 'bg-cyan-50'
-  }
-];
 
 const Simulators = () => {
   const [viewState, setViewState] = useState('difficulty'); // 'difficulty' | 'catalog'
@@ -124,8 +34,8 @@ const Simulators = () => {
     setViewState('catalog');
   };
 
-  // Filter simulators based on chosen difficulty (or show all with selected on top)
-  const filteredSimulators = simulators;
+  // Filter simulators based on chosen difficulty
+  const filteredSimulators = SIMULATORS.filter((sim) => sim.difficultyKey === selectedDifficulty);
 
   return (
     <AnimatePresence mode="wait">
@@ -609,9 +519,7 @@ const Simulators = () => {
                           <span>{sim.time}</span>
                         </div>
                         
-                        <Link to={
-                          sim.id === 'periodic-table' ? '#' : '/simulators/catalysis'
-                        }>
+                        <Link to={`/simulators/${sim.id}`}>
                           <Button variant="primary" size="sm" className="rounded-xl px-4 py-2 bg-[#004B76] hover:bg-[#003B5C] font-extrabold text-xs">
                             Iniciar
                           </Button>
