@@ -7,7 +7,8 @@
 INSERT INTO users (id, email, password_hash, name, avatar_url, role, level, xp) VALUES
   ('a0000000-0000-4000-8000-000000000001', 'julian@chemsystem.edu', '$2b$10$rQZ8K8Y8Y8Y8Y8Y8Y8Y8YuGKxGxGxGxGxGxGxGxGxGxGxGxGxGxG', 'Julian Mendoza', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Julian', 'student', 14, 1250),
   ('a0000000-0000-4000-8000-000000000002', 'maria@chemsystem.edu', '$2b$10$rQZ8K8Y8Y8Y8Y8Y8Y8Y8YuGKxGxGxGxGxGxGxGxGxGxGxGxGxGxG', 'María García', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Maria', 'student', 12, 980),
-  ('a0000000-0000-4000-8000-000000000003', 'profesor@chemsystem.edu', '$2b$10$rQZ8K8Y8Y8Y8Y8Y8Y8Y8YuGKxGxGxGxGxGxGxGxGxGxGxGxGxGxG', 'Dr. Carlos Ruiz', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Carlos', 'teacher', 25, 5200);
+  ('a0000000-0000-4000-8000-000000000003', 'profesor@chemsystem.edu', '$2b$10$rQZ8K8Y8Y8Y8Y8Y8Y8Y8YuGKxGxGxGxGxGxGxGxGxGxGxGxGxGxG', 'Dr. Carlos Ruiz', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Carlos', 'teacher', 25, 5200),
+  ('a0000000-0000-4000-8000-000000000004', 'padre@chemsystem.edu', '$2b$10$rQZ8K8Y8Y8Y8Y8Y8Y8Y8YuGKxGxGxGxGxGxGxGxGxGxGxGxGxGxG', 'Ana Mendoza', 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ana', 'parent', 8, 450);
 
 INSERT INTO compounds (id, code, name, label, concentration, color_class, dot_class, formula) VALUES
   ('b0000000-0000-4000-8000-000000000001', 'H2SO4', 'H₂SO₄', 'Ácido Sulfúrico', '98%', 'text-blue-500 bg-blue-50 border-blue-100', 'bg-blue-500', 'H2SO4'),

@@ -54,6 +54,16 @@ async function seed() {
       xp: 5200,
     });
 
+    await User.create({
+      email: 'padre@chemsystem.edu',
+      password_hash: passwordHash,
+      name: 'Ana Mendoza',
+      avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ana',
+      role: 'parent',
+      level: 8,
+      xp: 450,
+    });
+
     const compounds = await Compound.bulkCreate([
       { code: 'H2SO4', name: 'H₂SO₄', label: 'Ácido Sulfúrico', concentration: '98%', color_class: 'text-blue-500 bg-blue-50 border-blue-100', dot_class: 'bg-blue-500', formula: 'H2SO4' },
       { code: 'KMnO4', name: 'KMnO₄', label: 'Permanganato de Potasio', concentration: '0.1 M', color_class: 'text-emerald-500 bg-emerald-50 border-emerald-100', dot_class: 'bg-emerald-500', formula: 'KMnO4' },
@@ -127,7 +137,9 @@ async function seed() {
     ]);
 
     console.log('✓ Seed completado');
-    console.log('  Usuario demo: julian@chemsystem.edu / password123');
+    console.log('  Usuario demo:      julian@chemsystem.edu / password123');
+    console.log('  Usuario profesor:  profesor@chemsystem.edu / password123');
+    console.log('  Usuario padre:     padre@chemsystem.edu / password123');
     process.exit(0);
   } catch (err) {
     console.error('✗ Error en seed:', err);
