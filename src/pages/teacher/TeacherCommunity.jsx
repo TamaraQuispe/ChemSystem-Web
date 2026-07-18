@@ -1,222 +1,192 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Users, 
-  User, 
-  TrendingDown, 
-  ShieldAlert, 
-  MessageSquare, 
-  Paperclip, 
-  Send,
-  MoreVertical,
-  Clock,
-  Sparkles,
-  ArrowUpRight,
-  TrendingUp,
-  AlertTriangle
+import {
+  MessageSquare, Send, User, Clock, Sparkles,
+  CheckCheck, RefreshCw, AlertTriangle, School
 } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
-import { Badge } from '../../components/ui/Badge';
 import { cn } from '../../utils/cn';
+import { teacherService } from '../../services/teacherService';
 
 const TeacherCommunity = () => {
+  const [conversations, setConversations] = useState([]);
+  const [selectedConv, setSelectedConv] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [msgLoading, setMsgLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const messagesEndRef = useRef(null);
+
+  const fetchConversations = () => {
+    setLoading(true);
+    setError(null);
+    teacherService.getConversations()
+      .then(data => {
+        setConversations(data);
+        if (data.length > 0 && !selectedConv) setSelectedConv(data[0]);
+      })
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { fetchConversations(); }, []);
+  useEffect(() => {
+    if (!selectedConv) return;
+    setMsgLoading(true);
+    teacherService.getConversationMessages
+      ? teacherService.getConversationMessages(selectedConv.id).then(setMessages).catch(() => {}).finally(() => setMsgLoading(false))
+      : setMsgLoading(false);
+  }, [selectedConv?.id]);
+
+  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+
+  const handleSend = async () => {
+    if (!newMessage.trim() || !selectedConv) return;
+    const content = newMessage.trim();
+    setNewMessage('');
+    setMessages(prev => [...prev, { id: Date.now(), from: 'teacher', text: content, time: 'Ahora' }]);
+    try {
+      await teacherService.sendMessage(selectedConv.id, content);
+    } catch { /* ignore */ }
+  };
+
   return (
-    <div className="flex flex-col lg:flex-row gap-8 min-h-[calc(100vh-160px)]">
-      {/* Left Sidebar: Contexto del Alumno */}
-      <div className="lg:w-1/4 space-y-8">
-        <div className="space-y-4">
-          <h3 className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Contexto del Alumno</h3>
-          <Card className="p-8 border-none shadow-premium rounded-[2.5rem] bg-white space-y-8">
-             <div className="flex flex-col items-center text-center space-y-4">
-                <div className="w-20 h-20 rounded-3xl bg-purple-100 flex items-center justify-center text-purple-500 relative">
-                   <User size={40} />
-                   <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-lg shadow-sm flex items-center justify-center">
-                      <Sparkles size={14} className="text-purple-500" />
-                   </div>
-                </div>
-                <div>
-                   <h4 className="text-xl font-black text-primary-dark">Santiago Méndez</h4>
-                   <p className="text-xs font-bold text-text-secondary">Estudiante de Química II</p>
-                </div>
-             </div>
-
-             <div className="p-5 rounded-3xl bg-red-50 space-y-2">
-                <p className="text-[9px] font-black text-red-500 uppercase tracking-widest">Estado de Frustración</p>
-                <div className="flex justify-between items-center">
-                   <span className="text-lg font-black text-red-600">Elevado (82%)</span>
-                   <TrendingDown size={18} className="text-red-500" />
-                </div>
-             </div>
-
-             <div className="p-5 rounded-3xl bg-green-50 space-y-2">
-                <p className="text-[9px] font-black text-green-500 uppercase tracking-widest">Último Hito</p>
-                <p className="text-sm font-black text-green-700 leading-tight">Dominio de Enlaces Covalentes</p>
-             </div>
-          </Card>
+    <div className="space-y-6">
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-black text-primary-dark tracking-tight">Comunidad Educativa</h1>
+            <p className="text-text-secondary font-semibold mt-1">Comunicación con padres de familia</p>
+          </div>
+          <button onClick={fetchConversations} className="p-2.5 text-text-secondary hover:bg-gray-100 rounded-xl transition-all">
+            <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
+          </button>
         </div>
+      </motion.div>
 
-        <div className="space-y-4">
-          <h3 className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Muro de Avances</h3>
-          <div className="grid grid-cols-1 gap-4">
-             <div className="rounded-[2rem] overflow-hidden relative group h-40 shadow-premium">
-                <img src="https://images.unsplash.com/photo-1532187875302-1df92fa1f417?q=80&w=2070&auto=format&fit=crop" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="Cristalización" />
-                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all flex items-end p-6">
-                   <p className="text-[10px] font-black text-white uppercase tracking-widest">Cristalización de Sulfato</p>
-                </div>
-             </div>
-             <div className="rounded-[2rem] overflow-hidden relative group h-40 shadow-premium">
-                <img src="https://images.unsplash.com/photo-1614935151651-0bea6508db6b?q=80&w=2070&auto=format&fit=crop" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt="Hibridación" />
-                <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all flex items-end p-6">
-                   <p className="text-[10px] font-black text-white uppercase tracking-widest">Mapas de Hibridación</p>
-                </div>
-             </div>
+      {loading ? (
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-premium overflow-hidden h-[600px] animate-pulse">
+          <div className="p-6 space-y-4">
+            {[1, 2, 3].map(i => <div key={i} className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gray-200" />
+              <div className="flex-grow space-y-2"><div className="w-1/3 h-3 bg-gray-200 rounded" /><div className="w-2/3 h-2 bg-gray-200 rounded" /></div>
+            </div>)}
           </div>
         </div>
-      </div>
+      ) : error ? (
+        <Card className="p-12 text-center">
+          <AlertTriangle size={32} className="text-red-400 mx-auto mb-3" />
+          <p className="text-sm font-bold text-text-secondary mb-3">{error}</p>
+          <button onClick={fetchConversations} className="px-5 py-2 bg-primary text-white rounded-2xl font-bold text-xs">Reintentar</button>
+        </Card>
+      ) : conversations.length === 0 ? (
+        <Card className="p-12 text-center">
+          <MessageSquare size={48} className="text-gray-300 mx-auto mb-4" />
+          <h3 className="text-lg font-black text-primary-dark mb-2">Sin conversaciones</h3>
+          <p className="text-sm font-semibold text-text-secondary">Cuando los padres te contacten, las conversaciones aparecerán aquí.</p>
+        </Card>
+      ) : (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+          className="bg-white rounded-3xl border border-gray-100 shadow-premium overflow-hidden">
+          <div className="flex flex-col lg:flex-row h-[600px]">
+            <div className="w-full lg:w-[340px] border-b lg:border-b-0 lg:border-r border-gray-100 flex flex-col shrink-0">
+              <div className="p-4 border-b border-gray-100">
+                <p className="text-xs font-black text-primary-dark">Conversaciones con Padres</p>
+                <p className="text-[10px] font-bold text-text-secondary mt-0.5">{conversations.length} activas</p>
+              </div>
+              <div className="flex-grow overflow-y-auto">
+                {conversations.map(conv => (
+                  <button key={conv.id} onClick={() => setSelectedConv(conv)}
+                    className={cn("w-full p-4 flex items-start gap-3 border-b border-gray-50 transition-all text-left",
+                      selectedConv?.id === conv.id ? "bg-secondary/10" : "hover:bg-gray-50"
+                    )}>
+                    <div className="w-10 h-10 rounded-xl bg-gray-100 overflow-hidden shrink-0">
+                      <img src={conv.parent.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${conv.parent.name}`} alt={conv.parent.name} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="min-w-0 flex-grow">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black text-primary-dark truncate">{conv.parent.name}</span>
+                        <span className="text-[9px] font-semibold text-text-secondary shrink-0">{conv.lastMessage?.time || ''}</span>
+                      </div>
+                      <p className="text-[10px] font-bold text-text-secondary mt-0.5">{conv.subject}</p>
+                      {conv.student && <p className="text-[9px] font-semibold text-primary mt-0.5">Sobre: {conv.student.name}</p>}
+                      {conv.lastMessage && <p className="text-[10px] font-semibold text-gray-400 mt-1 truncate">{conv.lastMessage.content}</p>}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
 
-      {/* Main Chat Area */}
-      <div className="lg:flex-grow flex flex-col gap-6">
-        <Card className="flex-grow border-none shadow-premium rounded-[3rem] bg-white overflow-hidden flex flex-col">
-           {/* Chat Header */}
-           <div className="p-8 border-b border-gray-50 flex items-center justify-between">
-              <div className="flex items-center gap-6">
-                 <div className="flex -space-x-3">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="w-10 h-10 rounded-full border-2 border-white bg-gray-200 overflow-hidden">
-                         <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i + 10}`} alt="Member" />
+            <div className="flex-grow flex flex-col min-w-0">
+              {selectedConv ? (
+                <>
+                  <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-gray-100 overflow-hidden shrink-0">
+                        <img src={selectedConv.parent.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedConv.parent.name}`} alt={selectedConv.parent.name} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-sm font-black text-primary-dark truncate">{selectedConv.parent.name}</h3>
+                        <p className="text-[10px] font-bold text-text-secondary truncate">{selectedConv.subject}</p>
+                      </div>
+                    </div>
+                    {selectedConv.student && (
+                      <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-primary/5 rounded-xl text-[10px] font-bold text-primary">
+                        <School size={12} />{selectedConv.student.name}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex-grow overflow-y-auto p-6 space-y-4">
+                    {msgLoading ? (
+                      <div className="space-y-4">{[1, 2].map(i => <div key={i} className={cn("flex", i % 2 === 0 ? "justify-end" : "justify-start")}>
+                        <div className={cn("max-w-[75%] rounded-2xl px-4 py-3 animate-pulse", i % 2 === 0 ? "bg-primary/20" : "bg-gray-100")}>
+                          <div className="w-32 h-3 bg-white/30 rounded" /></div></div>)}</div>
+                    ) : messages.length === 0 ? (
+                      <div className="flex items-center justify-center h-full">
+                        <p className="text-xs font-semibold text-text-secondary">No hay mensajes aún.</p>
+                      </div>
+                    ) : messages.map(msg => (
+                      <div key={msg.id} className={cn("flex", msg.from === 'teacher' ? "justify-end" : "justify-start")}>
+                        <div className={cn("max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-3",
+                          msg.from === 'teacher' ? "bg-primary text-white rounded-br-md" : "bg-gray-50 text-text-main rounded-bl-md"
+                        )}>
+                          <p className="text-xs font-semibold leading-relaxed">{msg.text}</p>
+                          <div className={cn("flex items-center gap-1 mt-1", msg.from === 'teacher' ? "justify-end" : "justify-start")}>
+                            <span className={cn("text-[9px] font-medium", msg.from === 'teacher' ? "text-white/70" : "text-gray-400")}>{msg.time}</span>
+                            {msg.from === 'teacher' && <CheckCheck size={12} className="text-white/70" />}
+                          </div>
+                        </div>
                       </div>
                     ))}
-                 </div>
-                 <div>
-                    <h3 className="text-xl font-black text-primary-dark">Canal de Colaboración: Santiago</h3>
-                    <p className="text-[10px] font-black text-green-500 uppercase tracking-widest flex items-center gap-1">
-                       <span className="w-2 h-2 rounded-full bg-green-500" /> 3 Miembros Activos
-                    </p>
-                 </div>
-              </div>
-              <Button className="rounded-2xl h-12 px-6 font-black bg-primary-dark text-xs uppercase tracking-widest">
-                 Intervención Urgente
-              </Button>
-           </div>
+                    <div ref={messagesEndRef} />
+                  </div>
 
-           {/* Chat Content */}
-           <div className="flex-grow p-10 overflow-y-auto space-y-8 bg-gray-50/30">
-              {/* Alert Bubble */}
-              <div className="flex justify-center">
-                 <div className="px-6 py-2 rounded-full bg-red-50 border border-red-100 flex items-center gap-2">
-                    <AlertTriangle size={14} className="text-red-500" />
-                    <span className="text-[10px] font-black text-red-500 uppercase tracking-widest">Alerta de frustración detectada en Santiago (Unidad 4)</span>
-                 </div>
-              </div>
-
-              {/* Teacher Message */}
-              <div className="flex gap-4 max-w-2xl">
-                 <div className="w-10 h-10 rounded-2xl overflow-hidden shrink-0 border-2 border-primary/20">
-                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Elena" alt="Dra Elena" />
-                 </div>
-                 <div className="space-y-2">
+                  <div className="px-6 py-4 border-t border-gray-100 shrink-0">
                     <div className="flex items-center gap-3">
-                       <span className="text-[10px] font-black text-primary uppercase tracking-widest">Docente: Dra. Elena</span>
-                       <span className="text-[10px] font-bold text-text-secondary uppercase">10:24 AM</span>
+                      <input type="text" placeholder="Escribe un mensaje..." value={newMessage}
+                        onChange={e => setNewMessage(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()}
+                        className="flex-grow h-11 px-5 bg-gray-50 border-none rounded-2xl text-xs font-semibold focus:ring-2 focus:ring-primary/20 outline-none" />
+                      <button onClick={handleSend} disabled={!newMessage.trim()}
+                        className="p-2.5 bg-primary text-white rounded-xl hover:bg-primary-dark transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                        <Send size={18} />
+                      </button>
                     </div>
-                    <div className="p-6 rounded-[2rem] rounded-tl-none bg-white shadow-sm border border-gray-50">
-                       <p className="text-sm font-medium text-text-main leading-relaxed">
-                          Hola a todos. El sistema ha detectado que Santiago ha intentado el balanceo de ecuaciones redox cinco veces sin éxito. Creo que necesitamos reforzar la base de estados de oxidación antes de continuar.
-                       </p>
-                    </div>
-                 </div>
-              </div>
-
-              {/* Parent Message (Right) */}
-              <div className="flex gap-4 max-w-2xl ml-auto flex-row-reverse">
-                 <div className="w-10 h-10 rounded-2xl overflow-hidden shrink-0 border-2 border-blue-200">
-                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Parent" alt="Parent" />
-                 </div>
-                 <div className="space-y-2 text-right">
-                    <div className="flex items-center gap-3 justify-end">
-                       <span className="text-[10px] font-bold text-text-secondary uppercase">10:30 AM</span>
-                       <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Padre: Sr. Mendez</span>
-                    </div>
-                    <div className="p-6 rounded-[2rem] rounded-tr-none bg-green-50 shadow-sm border border-green-100">
-                       <p className="text-sm font-medium text-text-main leading-relaxed">
-                          Gracias por avisar, Dra. Elena. He notado a Santiago un poco desanimado ayer por la tarde mientras estudiaba. ¿Hay algún material adicional que podamos revisar en casa hoy?
-                       </p>
-                    </div>
-                 </div>
-              </div>
-
-              {/* Santiago Message */}
-              <div className="flex gap-4 max-w-2xl">
-                 <div className="w-10 h-10 rounded-2xl overflow-hidden shrink-0 border-2 border-purple-200">
-                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Santiago" alt="Santiago" />
-                 </div>
-                 <div className="space-y-2">
-                    <div className="flex items-center gap-3">
-                       <span className="text-[10px] font-black text-purple-500 uppercase tracking-widest">Santiago</span>
-                       <span className="text-[10px] font-bold text-text-secondary uppercase">10:45 AM</span>
-                    </div>
-                    <div className="p-6 rounded-[2rem] rounded-tl-none bg-purple-50 shadow-sm border border-purple-100">
-                       <p className="text-sm font-medium text-text-main leading-relaxed">
-                          Me confundo mucho cuando los electrones se mueven en medios ácidos. Siento que me pierdo en el tercer paso. ¡Me encantaría ver un ejemplo más visual!
-                       </p>
-                    </div>
-                 </div>
-              </div>
-           </div>
-
-           {/* Chat Input */}
-           <div className="p-8 bg-white border-t border-gray-50">
-              <div className="relative">
-                 <input 
-                   type="text" 
-                   placeholder="Escribe un mensaje de apoyo o coordinación..." 
-                   className="w-full h-16 pl-8 pr-32 bg-gray-50 border-none rounded-3xl focus:ring-2 focus:ring-primary/20 transition-all font-medium"
-                 />
-                 <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-3">
-                    <button className="p-2 text-text-secondary hover:text-primary transition-colors"><Paperclip size={20} /></button>
-                    <button className="w-12 h-12 rounded-2xl bg-primary-dark text-white flex items-center justify-center shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
-                       <Send size={20} />
-                    </button>
-                 </div>
-              </div>
-           </div>
-        </Card>
-      </div>
-
-      {/* Right Sidebar: Eventos Críticos & Sugerencia IA */}
-      <div className="lg:w-1/4 space-y-8">
-        <div className="space-y-6">
-           <h3 className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Eventos Críticos</h3>
-           <div className="space-y-8 relative pl-6">
-              <div className="absolute left-0 top-2 bottom-2 w-px bg-gray-100" />
-              
-              <div className="relative">
-                 <div className="absolute -left-[25px] top-1.5 w-2 h-8 bg-red-500 rounded-full" />
-                 <h4 className="font-black text-primary-dark text-sm mb-1">Abandono de sesión</h4>
-                 <p className="text-xs text-text-secondary font-medium leading-relaxed">Santiago cerró el simulador de Laboratorio tras 3 errores consecutivos.</p>
-                 <span className="text-[10px] font-black text-text-secondary uppercase tracking-widest block mt-2">Hace 15 min</span>
-              </div>
-
-              <div className="relative">
-                 <div className="absolute -left-[25px] top-1.5 w-2 h-8 bg-green-400 rounded-full" />
-                 <h4 className="font-black text-primary-dark text-sm mb-1">Hito Alcanzado</h4>
-                 <p className="text-xs text-text-secondary font-medium leading-relaxed">Se completó el módulo de Estequiometría con 95% de precisión.</p>
-                 <span className="text-[10px] font-black text-text-secondary uppercase tracking-widest block mt-2">Hace 2 horas</span>
-              </div>
-           </div>
-        </div>
-
-        <Card className="p-8 border-none shadow-premium rounded-[2.5rem] bg-blue-50/50 space-y-6">
-           <div className="flex items-center gap-2">
-              <Sparkles className="text-blue-500" size={16} />
-              <span className="text-[10px] font-black text-blue-500 uppercase tracking-widest">Sugerencia IA</span>
-           </div>
-           <p className="text-sm font-bold text-text-main leading-relaxed italic">
-              Se recomienda una sesión de tutoría 1-a-1 de 15 min centrada en Reducción-Oxidación.
-           </p>
-        </Card>
-      </div>
+                  </div>
+                </>
+              ) : (
+                <div className="flex-grow flex items-center justify-center bg-gray-50/50">
+                  <div className="text-center">
+                    <MessageSquare size={48} className="text-gray-200 mx-auto mb-4" />
+                    <p className="text-sm font-bold text-text-secondary">Selecciona una conversación</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 };

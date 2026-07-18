@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import api from '../services/api';
 
 const ACHIEVEMENTS = [
   {
@@ -140,6 +141,11 @@ export const useAchievementStore = create(
 
         set(updates);
         get().checkAndAwardAchievements();
+        // Sync XP with backend
+        api.post('/student/quiz/complete', {
+          score: amount, max_score: amount, xp_earned: amount,
+          time_spent_seconds: 0,
+        }).catch(() => {});
       },
 
       checkAndAwardAchievements: () => {
@@ -164,6 +170,17 @@ export const useAchievementStore = create(
                 createdAt: new Date().toISOString(),
               })),
             ],
+          });
+
+          // Sync achievements to backend
+          newAchievements.forEach(a => {
+            api.post('/student/achievements', {
+              title: a.title,
+              description: a.description,
+              icon: a.icon,
+              rarity: 'common',
+              xp_awarded: a.xp,
+            }).catch(() => {});
           });
         }
       },

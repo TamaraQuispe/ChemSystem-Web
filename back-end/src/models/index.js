@@ -20,6 +20,22 @@ const AiRecommendation = require('./AiRecommendation')(sequelize);
 const Notification = require('./Notification')(sequelize);
 const UserAnalytics = require('./UserAnalytics')(sequelize);
 const CommunityPost = require('./CommunityPost')(sequelize);
+const FamilyRelationship = require('./FamilyRelationship')(sequelize);
+const Conversation = require('./Conversation')(sequelize);
+const Message = require('./Message')(sequelize);
+const Classroom = require('./Classroom')(sequelize);
+const Enrollment = require('./Enrollment')(sequelize);
+const Grade = require('./Grade')(sequelize);
+const Assignment = require('./Assignment')(sequelize);
+const QuizResult = require('./QuizResult')(sequelize);
+const Achievement = require('./Achievement')(sequelize);
+const Course = require('./Course')(sequelize);
+const Lesson = require('./Lesson')(sequelize);
+const Assessment = require('./Assessment')(sequelize);
+const QuestionBank = require('./QuestionBank')(sequelize);
+const AssessmentAttempt = require('./AssessmentAttempt')(sequelize);
+const CourseProgress = require('./CourseProgress')(sequelize);
+const Certificate = require('./Certificate')(sequelize);
 
 // Associations
 User.hasMany(Experiment, { foreignKey: 'user_id', as: 'experiments' });
@@ -58,6 +74,7 @@ Module.belongsToMany(User, {
   otherKey: 'user_id',
   as: 'users',
 });
+UserModule.belongsTo(Module, { foreignKey: 'module_id', as: 'module' });
 
 User.hasMany(Notification, { foreignKey: 'user_id', as: 'notifications' });
 Notification.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
@@ -67,6 +84,77 @@ UserAnalytics.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 
 User.hasMany(CommunityPost, { foreignKey: 'user_id', as: 'posts' });
 CommunityPost.belongsTo(User, { foreignKey: 'user_id', as: 'author' });
+
+// Family Relationship associations
+User.hasMany(FamilyRelationship, { foreignKey: 'parent_id', as: 'parentRelationships' });
+User.hasMany(FamilyRelationship, { foreignKey: 'student_id', as: 'studentRelationships' });
+FamilyRelationship.belongsTo(User, { foreignKey: 'parent_id', as: 'parent' });
+FamilyRelationship.belongsTo(User, { foreignKey: 'student_id', as: 'student' });
+
+// Conversation & Message associations
+Conversation.belongsTo(User, { foreignKey: 'parent_id', as: 'parent' });
+Conversation.belongsTo(User, { foreignKey: 'teacher_id', as: 'teacher' });
+Conversation.belongsTo(User, { foreignKey: 'student_id', as: 'student' });
+Conversation.hasMany(Message, { foreignKey: 'conversation_id', as: 'messages' });
+Message.belongsTo(Conversation, { foreignKey: 'conversation_id', as: 'conversation' });
+Message.belongsTo(User, { foreignKey: 'sender_id', as: 'sender' });
+
+// Teacher model associations
+User.hasMany(Classroom, { foreignKey: 'teacher_id', as: 'classrooms' });
+Classroom.belongsTo(User, { foreignKey: 'teacher_id', as: 'teacher' });
+
+Classroom.hasMany(Enrollment, { foreignKey: 'classroom_id', as: 'enrollments' });
+Enrollment.belongsTo(Classroom, { foreignKey: 'classroom_id', as: 'classroom' });
+Enrollment.belongsTo(User, { foreignKey: 'student_id', as: 'student' });
+User.hasMany(Enrollment, { foreignKey: 'student_id', as: 'enrollments' });
+
+Enrollment.hasMany(Grade, { foreignKey: 'enrollment_id', as: 'grades' });
+Grade.belongsTo(Enrollment, { foreignKey: 'enrollment_id', as: 'enrollment' });
+
+Classroom.hasMany(Assignment, { foreignKey: 'classroom_id', as: 'assignments' });
+Assignment.belongsTo(Classroom, { foreignKey: 'classroom_id', as: 'classroom' });
+
+User.hasMany(QuizResult, { foreignKey: 'user_id', as: 'quizResults' });
+QuizResult.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+User.hasMany(Achievement, { foreignKey: 'user_id', as: 'achievements' });
+Achievement.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+// Course → Module → Lesson
+Course.hasMany(Module, { foreignKey: 'course_id', as: 'modules' });
+Module.belongsTo(Course, { foreignKey: 'course_id', as: 'course' });
+
+Module.hasMany(Lesson, { foreignKey: 'module_id', as: 'lessons' });
+Lesson.belongsTo(Module, { foreignKey: 'module_id', as: 'module' });
+
+// Assessments (polymorphic-like: can belong to course, module, or lesson)
+Assessment.belongsTo(Course, { foreignKey: 'course_id', as: 'course' });
+Assessment.belongsTo(Module, { foreignKey: 'module_id', as: 'module' });
+Assessment.belongsTo(Lesson, { foreignKey: 'lesson_id', as: 'lesson' });
+
+Course.hasMany(Assessment, { foreignKey: 'course_id', as: 'assessments' });
+Module.hasMany(Assessment, { foreignKey: 'module_id', as: 'assessments' });
+Lesson.hasMany(Assessment, { foreignKey: 'lesson_id', as: 'assessments' });
+
+// QuestionBank ← Assessment
+QuestionBank.belongsTo(Assessment, { foreignKey: 'assessment_id', as: 'assessment' });
+Assessment.hasMany(QuestionBank, { foreignKey: 'assessment_id', as: 'questions' });
+
+// AssessmentAttempt ← User + Assessment
+AssessmentAttempt.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+AssessmentAttempt.belongsTo(Assessment, { foreignKey: 'assessment_id', as: 'assessment' });
+User.hasMany(AssessmentAttempt, { foreignKey: 'user_id', as: 'assessmentAttempts' });
+Assessment.hasMany(AssessmentAttempt, { foreignKey: 'assessment_id', as: 'attempts' });
+
+// CourseProgress ← User + Course
+CourseProgress.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+CourseProgress.belongsTo(Course, { foreignKey: 'course_id', as: 'course' });
+User.hasOne(CourseProgress, { foreignKey: 'user_id', as: 'courseProgress' });
+
+// Certificate
+Certificate.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+Certificate.belongsTo(Course, { foreignKey: 'course_id', as: 'course' });
+User.hasMany(Certificate, { foreignKey: 'user_id', as: 'certificates' });
 
 module.exports = {
   sequelize,
@@ -83,4 +171,20 @@ module.exports = {
   Notification,
   UserAnalytics,
   CommunityPost,
+  FamilyRelationship,
+  Conversation,
+  Message,
+  Classroom,
+  Enrollment,
+  Grade,
+  Assignment,
+  QuizResult,
+  Achievement,
+  Course,
+  Lesson,
+  Assessment,
+  QuestionBank,
+  AssessmentAttempt,
+  CourseProgress,
+  Certificate,
 };

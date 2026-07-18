@@ -42,7 +42,7 @@ const RoleSelection = () => {
 
   useEffect(() => {
     if (user?.role) {
-      navigate(user.role === 'teacher' ? '/teacher/dashboard' : '/home', { replace: true });
+      navigate(user.role === 'teacher' ? '/teacher/dashboard' : user.role === 'parent' ? '/parent/dashboard' : '/home', { replace: true });
     }
   }, [user, navigate]);
 
@@ -54,6 +54,8 @@ const RoleSelection = () => {
       login({ ...user, role: roleId }, localStorage.getItem('chemsystem_token'));
       if (roleId === 'teacher') {
         navigate('/teacher/dashboard');
+      } else if (roleId === 'parent') {
+        navigate('/parent/dashboard');
       } else {
         navigate('/home');
       }

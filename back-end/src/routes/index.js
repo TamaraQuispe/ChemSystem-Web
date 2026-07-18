@@ -22,5 +22,11 @@ router.use('/notifications', notificationRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/ai', aiRoutes);
 router.use('/community', communityRoutes);
+router.use('/parent', require('./parentRoutes'));
+router.use('/teacher', require('./teacherRoutes'));
+router.use('/student', require('./studentRoutes'));
+router.use('/courses', require('./courseRoutes'));
+router.use('/assessments', require('./assessmentRoutes'));
+router.use('/certificates', require('./certificateRoutes'));
 
 module.exports = router;

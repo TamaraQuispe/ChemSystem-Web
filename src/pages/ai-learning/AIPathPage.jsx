@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Trophy, 
@@ -15,16 +15,45 @@ import {
   ChevronRight, 
   GraduationCap,
   Lightbulb,
-  FileText
+  FileText,
+  AlertTriangle,
+  RefreshCw
 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
 import { Button } from '../../components/ui/Button';
 import { Progress } from '../../components/ui/Progress';
+import { cn } from '../../utils/cn';
+import api from '../../services/api';
 
-// Weekly Study Data (Martes, Jueves, Domingo active)
-const WEEK_DATA = [
+const AIPathPage = () => {
+  const [modules, setModules] = useState([]);
+  const [recommendations, setRecommendations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [mRes, rRes] = await Promise.allSettled([
+        api.get('/modules'),
+        api.get('/ai/recommendations'),
+      ]);
+      if (mRes.status === 'fulfilled') setModules(mRes.value.data || []);
+      if (rRes.status === 'fulfilled') setRecommendations(rRes.value.data || []);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchData(); }, []);
+
+  // Weekly Study Data (Martes, Jueves, Domingo active)
+  const WEEK_DATA = [
   { name: 'LUN', hours: 1.0, active: false },
   { name: 'MAR', hours: 3.5, active: true },
   { name: 'MIE', hours: 1.5, active: false },
@@ -91,7 +120,30 @@ function ZapIcon(props) {
   );
 }
 
-const AIPathPage = () => {
+  if (loading) {
+    return (
+      <div className="max-w-[1400px] mx-auto pb-20 space-y-8">
+        <div className="w-72 h-9 bg-gray-200 rounded-lg animate-pulse" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[1, 2, 3].map(i => <div key={i} className="h-32 bg-white rounded-3xl animate-pulse border border-gray-100" />)}
+        </div>
+        <div className="h-64 bg-white rounded-3xl animate-pulse border border-gray-100" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-[1400px] mx-auto pb-20 space-y-8">
+        <Card className="p-12 text-center">
+          <AlertTriangle size={32} className="text-red-400 mx-auto mb-3" />
+          <p className="text-sm font-bold text-text-secondary mb-3">{error}</p>
+          <button onClick={fetchData} className="px-5 py-2 bg-primary text-white rounded-2xl font-bold text-xs">Reintentar</button>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-[1400px] mx-auto pb-20 space-y-8 select-none">
       

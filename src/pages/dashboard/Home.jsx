@@ -1,345 +1,217 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { 
-  BookOpen, 
-  FlaskConical, 
-  Beaker, 
-  Atom, 
-  ChevronRight, 
-  ChevronDown,
-  Award, 
-  Flame, 
-  FileText,
-  CalendarDays
+import {
+  BookOpen, FlaskConical, Beaker, Atom, ChevronRight,
+  Award, Flame, FileText, CalendarDays, Target, Zap,
+  Clock, TrendingUp, AlertTriangle, GraduationCap
 } from 'lucide-react';
-import { Card } from '../../components/ui/Card';
-import { Badge } from '../../components/ui/Badge';
-import { cn } from '../../utils/cn';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  Tooltip, 
-  ResponsiveContainer 
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer
 } from 'recharts';
+import { Card } from '../../components/ui/Card';
+import { cn } from '../../utils/cn';
 import { useAuthStore } from '../../store/authStore';
+import { useStudentStore } from '../../store/studentStore';
 
-const weeklyData = [
-  { day: 'L', xp: 55 },
-  { day: 'M', xp: 85 },
-  { day: 'X', xp: 35 },
-  { day: 'J', xp: 75 },
-  { day: 'V', xp: 50 },
-  { day: 'S', xp: 15 },
-  { day: 'D', xp: 5 },
+const quickAccess = [
+  { icon: GraduationCap, label: 'Cursos', path: '/modules', color: 'bg-primary/10 text-primary' },
+  { icon: FlaskConical, label: 'Simuladores', path: '/simulators', color: 'bg-blue-50 text-blue-500' },
+  { icon: Beaker, label: 'Laboratorio', path: '/modules', color: 'bg-emerald-50 text-emerald-500' },
+  { icon: BookOpen, label: 'Lecciones', path: '/lessons', color: 'bg-amber-50 text-amber-500' },
 ];
 
 const Home = () => {
   const { user } = useAuthStore();
-  const userName = user?.name || 'Usuario';
-  const userLevel = user?.level ?? 1;
-  const userXp = user?.xp ?? 0;
+  const { dashboardData, loading, fetchDashboard } = useStudentStore();
+
+  useEffect(() => { fetchDashboard(); }, []);
+
+  const defaultXp = [
+    { day: 'L', xp: 55 }, { day: 'M', xp: 85 }, { day: 'X', xp: 35 },
+    { day: 'J', xp: 75 }, { day: 'V', xp: 90 }, { day: 'S', xp: 45 }, { day: 'D', xp: 65 },
+  ];
+
+  const data = dashboardData;
+  const weeklyXp = data?.weeklyXp || defaultXp;
 
   return (
-    <div className="space-y-10 pb-16">
-      
-      <div className="space-y-1.5">
-        <h1 className="text-4xl font-extrabold text-[#0D2140] tracking-tight">
-          Bienvenido, {userName}
+    <div className="space-y-8">
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+        <h1 className="text-3xl font-black text-primary-dark tracking-tight">
+          Bienvenido, {user?.name || 'Estudiante'}
         </h1>
-        <p className="text-base text-gray-500 font-medium">
-          Tu camino hacia la excelencia química continúa hoy.
-        </p>
-      </div>
+        <p className="text-text-secondary font-semibold mt-1">Continúa tu viaje en la química</p>
+      </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        <div className="lg:col-span-8">
-          <Card 
-            animate={true} 
-            className="w-full relative overflow-hidden bg-white border border-gray-100 p-10 rounded-[2.5rem] shadow-sm flex flex-col justify-between min-h-[220px] h-full"
-          >
-            <div className="absolute right-8 top-1/2 -translate-y-1/2 w-44 h-44 flex items-center justify-center opacity-100 pointer-events-none overflow-hidden">
-              <svg viewBox="0 0 100 100" className="w-36 h-36 text-gray-100/50 fill-gray-50/20 stroke-gray-200/30 stroke-[1.5]">
-                <polygon points="50,2 91.6,26 91.6,74 50,98 8.4,74 8.4,26" />
-              </svg>
-            </div>
-
-            <div className="relative z-10 flex flex-col justify-between h-full space-y-6">
+      {/* KPI Grid */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+        className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { icon: TrendingUp, label: 'Promedio', value: data?.kpis?.avgScore || '—', color: 'bg-blue-50', iconColor: 'text-blue-500' },
+          { icon: Flame, label: 'Racha', value: `${data?.kpis?.streak || 0} días`, color: 'bg-orange-50', iconColor: 'text-orange-500' },
+          { icon: FlaskConical, label: 'Experimentos', value: data?.kpis?.experimentsCount || 0, color: 'bg-emerald-50', iconColor: 'text-emerald-500' },
+          { icon: Award, label: 'Módulos', value: data?.kpis?.modulesCompleted || 0, color: 'bg-violet-50', iconColor: 'text-violet-500' },
+        ].map((kpi, idx) => (
+          <div key={idx} className="bg-white rounded-3xl p-5 border border-gray-100 shadow-premium">
+            <div className="flex items-center gap-3">
+              <div className={cn("w-10 h-10 rounded-2xl flex items-center justify-center", kpi.color)}>
+                <kpi.icon size={20} className={kpi.iconColor} />
+              </div>
               <div>
-                <p className="text-xs font-black text-[#0066FF] uppercase tracking-[0.2em] mb-2.5">
-                  MÓDULO ACTUAL
-                </p>
-                <h2 className="text-3xl font-extrabold text-[#0D2140] tracking-tight">
-                  Cinética Química y Equilibrio
-                </h2>
+                <p className="text-xl font-black text-primary-dark">{kpi.value}</p>
+                <p className="text-[10px] font-bold text-text-secondary">{kpi.label}</p>
               </div>
-
-              <div className="flex items-center gap-8 pr-40">
-                <div className="flex-grow">
-                  <div className="h-4 bg-gray-100 rounded-full overflow-hidden p-0.5 border border-gray-200/20">
-                    <motion.div 
-                      initial={{ width: 0 }}
-                      animate={{ width: '68%' }}
-                      transition={{ duration: 1.2, ease: "easeOut" }}
-                      className="h-full bg-[#004B76] rounded-full" 
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="absolute right-[4.5rem] top-1/2 -translate-y-1/2 z-10 flex items-center justify-center">
-              <span className="text-4xl font-extrabold text-[#004B76] tracking-tighter">68%</span>
-            </div>
-          </Card>
-        </div>
-
-        <div className="lg:col-span-4 flex flex-col gap-6 justify-between">
-          
-          <Card 
-            animate={true} 
-            delay={0.1}
-            className="flex items-center gap-5 bg-gray-50 border border-gray-100 p-6 rounded-3xl shadow-sm flex-1"
-          >
-            <div className="w-14 h-14 bg-[#004B76] text-white rounded-2xl flex items-center justify-center shrink-0 shadow-sm shadow-[#004B76]/10">
-              <Award size={26} className="stroke-[2.5]" />
-            </div>
-            <div>
-              <p className="text-[11px] font-extrabold text-gray-400 uppercase tracking-widest mb-0.5">
-                XP Acumulado
-              </p>
-              <p className="text-2xl font-black text-[#0D2140]">
-                {userXp.toLocaleString()} XP
-              </p>
-            </div>
-          </Card>
-
-          <Card 
-            animate={true} 
-            delay={0.2}
-            className="flex items-center gap-5 bg-[#90F8C7] border border-transparent p-6 rounded-3xl shadow-sm flex-1"
-          >
-            <div className="w-14 h-14 bg-white/40 text-[#15462D] rounded-2xl flex items-center justify-center shrink-0">
-              <Flame size={26} className="fill-current stroke-[2]" />
-            </div>
-            <div>
-              <p className="text-[11px] font-extrabold text-[#1E523A] uppercase tracking-widest mb-0.5">
-                Nivel Actual
-              </p>
-              <p className="text-2xl font-black text-[#15462D]">
-                Nivel {userLevel}
-              </p>
-            </div>
-          </Card>
-        </div>
-      </div>
-
-      <div className="space-y-6">
-        <h3 className="text-2xl font-extrabold text-[#0D2140] tracking-tight">
-          Accesos Rápidos
-        </h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          
-          <Link to="/lessons" className="group block h-full">
-            <Card 
-              animate={true} 
-              delay={0.1}
-              className="flex flex-col items-center justify-center p-8 bg-white border border-gray-100 rounded-3xl shadow-sm hover:shadow-md transition-all text-center h-full group-hover:scale-[1.02] duration-200"
-            >
-              <div className="w-14 h-14 bg-[#E8F1FF] text-[#0066FF] rounded-full flex items-center justify-center mb-4 transition-transform group-hover:scale-110">
-                <BookOpen size={24} className="stroke-[2.5]" />
-              </div>
-              <span className="font-extrabold text-[#0D2140] text-sm md:text-base tracking-tight">
-                Micro-lecciones
-              </span>
-            </Card>
-          </Link>
-
-          <Link to="/simulators/catalysis" className="group block h-full">
-            <Card 
-              animate={true} 
-              delay={0.15}
-              className="flex flex-col items-center justify-center p-8 bg-white border border-gray-100 rounded-3xl shadow-sm hover:shadow-md transition-all text-center h-full group-hover:scale-[1.02] duration-200"
-            >
-              <div className="w-14 h-14 bg-[#EAFBF3] text-[#10B981] rounded-full flex items-center justify-center mb-4 transition-transform group-hover:scale-110">
-                <FlaskConical size={24} className="stroke-[2.5]" />
-              </div>
-              <span className="font-extrabold text-[#0D2140] text-sm md:text-base tracking-tight">
-                Laboratorio Virtual
-              </span>
-            </Card>
-          </Link>
-
-          <Link to="/molecular/builder" className="group block h-full">
-            <Card 
-              animate={true} 
-              delay={0.2}
-              className="flex flex-col items-center justify-center p-8 bg-white border border-gray-100 rounded-3xl shadow-sm hover:shadow-md transition-all text-center h-full group-hover:scale-[1.02] duration-200"
-            >
-              <div className="w-14 h-14 bg-[#F5ECFF] text-[#8B5CF6] rounded-full flex items-center justify-center mb-4 transition-transform group-hover:scale-110">
-                <Beaker size={24} className="stroke-[2.5]" />
-              </div>
-              <span className="font-extrabold text-[#0D2140] text-sm md:text-base tracking-tight">
-                Sandbox Privado
-              </span>
-            </Card>
-          </Link>
-
-          <Link to="/simulators" className="group block h-full">
-            <Card 
-              animate={true} 
-              delay={0.25}
-              className="flex flex-col items-center justify-center p-8 bg-white border border-gray-100 rounded-3xl shadow-sm hover:shadow-md transition-all text-center h-full group-hover:scale-[1.02] duration-200"
-            >
-              <div className="w-14 h-14 bg-[#F3F4F6] text-[#6B7280] rounded-full flex items-center justify-center mb-4 transition-transform group-hover:scale-110">
-                <Atom size={24} className="stroke-[2.5]" />
-              </div>
-              <span className="font-extrabold text-[#0D2140] text-sm md:text-base tracking-tight">
-                Simuladores
-              </span>
-            </Card>
-          </Link>
-
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        <div className="lg:col-span-8">
-          <Card 
-            animate={true} 
-            className="w-full bg-white border border-gray-100 p-8 rounded-[2.5rem] shadow-sm flex flex-col justify-between min-h-[350px] h-full"
-          >
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-xl font-extrabold text-[#0D2140] tracking-tight">
-                Progreso Semanal
-              </h3>
-              
-              <div>
-                <button className="flex items-center gap-2 px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 transition-colors">
-                  Últimos 7 días
-                  <ChevronDown size={14} />
-                </button>
-              </div>
-            </div>
-
-            <div className="flex-grow h-60 min-h-[220px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={weeklyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="blueGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#004B76" />
-                      <stop offset="100%" stopColor="#005B8F" />
-                    </linearGradient>
-                  </defs>
-                  <XAxis 
-                    dataKey="day" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fill: '#9CA3AF', fontSize: 12, fontWeight: 700 }}
-                  />
-                  <YAxis hide={true} />
-                  <Tooltip cursor={{ fill: 'transparent' }} />
-                  <Bar 
-                    dataKey="xp" 
-                    fill="url(#blueGradient)" 
-                    radius={[10, 10, 10, 10]} 
-                    barSize={12}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
-        </div>
-
-        <div className="lg:col-span-4 flex flex-col gap-6 justify-between">
-          
-          <div className="space-y-4">
-            <h4 className="text-xl font-extrabold text-[#0D2140] tracking-tight">
-              Próximas Tareas
-            </h4>
-            
-            <div className="space-y-3">
-              <Link to="/lessons" className="block group">
-                <div className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow transition-all group-hover:scale-[1.01]">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-[#E8F1FF] text-[#0066FF] rounded-xl flex items-center justify-center shrink-0">
-                      <BookOpen size={20} className="stroke-[2.5]" />
-                    </div>
-                    <div>
-                      <h5 className="font-extrabold text-sm text-[#0D2140] tracking-tight">
-                        Micro-lección: Estructura del Átomo
-                      </h5>
-                      <p className="text-xs text-gray-400 font-medium">
-                        Continúa donde lo dejaste
-                      </p>
-                    </div>
-                  </div>
-                  <ChevronRight size={18} className="text-gray-400 transition-transform group-hover:translate-x-1" />
-                </div>
-              </Link>
-
-              <Link to="/simulators/catalysis" className="block group">
-                <div className="flex items-center justify-between p-4 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow transition-all group-hover:scale-[1.01]">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-[#EAFBF3] text-[#10B981] rounded-xl flex items-center justify-center shrink-0">
-                      <FileText size={20} className="stroke-[2.5]" />
-                    </div>
-                    <div>
-                      <h5 className="font-extrabold text-sm text-[#0D2140] tracking-tight">
-                        Informe de Lab
-                      </h5>
-                      <p className="text-xs text-gray-400 font-medium">
-                        Sábado, 23:59 PM
-                      </p>
-                    </div>
-                  </div>
-                  <ChevronRight size={18} className="text-gray-400 transition-transform group-hover:translate-x-1" />
-                </div>
-              </Link>
             </div>
           </div>
+        ))}
+      </motion.div>
 
-          <Card 
-            animate={true} 
-            delay={0.3}
-            className="bg-gradient-to-r from-[#905DF6] to-[#7B3FE4] text-white p-5 rounded-[2rem] shadow-sm flex flex-col justify-between"
-          >
-            <p className="text-[10px] font-black text-purple-200 tracking-[0.2em] uppercase mb-4">
-              ÚLTIMA INSIGNIA
-            </p>
-            
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center text-[#7B3FE4] shrink-0 shadow-md">
-                <Award size={28} className="stroke-[2.5]" />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left Column */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* XP Chart */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-black text-primary-dark">XP Esta Semana</h2>
+                <div className="flex items-center gap-1 text-xs font-bold text-text-secondary">
+                  <Zap size={14} className="text-amber-500" />
+                  {weeklyXp.reduce((s, d) => s + d.xp, 0)} XP
+                </div>
               </div>
-              <div>
-                <h5 className="text-base font-extrabold leading-tight">
-                  Maestro de Enlaces
-                </h5>
-                <p className="text-xs text-purple-200 font-medium">
-                  Obtenida recientemente
-                </p>
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={weeklyXp} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="xpGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#005B8F" />
+                        <stop offset="100%" stopColor="#005B8F" stopOpacity={0.4} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: '#9CA3AF', fontSize: 12, fontWeight: 700 }} />
+                    <YAxis hide={true} />
+                    <Tooltip cursor={{ fill: 'transparent' }} />
+                    <Bar dataKey="xp" fill="url(#xpGrad)" radius={[10, 10, 10, 10]} barSize={16} />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
-            </div>
-          </Card>
+            </Card>
+          </motion.div>
+
+          {/* Current Module */}
+          {data?.currentModule && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+              <Link to="/modules" className="block">
+                <Card className="p-6 bg-gradient-to-br from-primary to-primary-dark text-white hover:shadow-xl transition-all">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] font-bold text-white/60 uppercase tracking-wider">Módulo Actual</p>
+                      <h3 className="text-xl font-black text-white mt-1">{data.currentModule.title}</h3>
+                      <div className="flex items-center gap-3 mt-3">
+                        <div className="w-32 h-2 bg-white/20 rounded-full overflow-hidden">
+                          <div className="h-full bg-secondary rounded-full" style={{ width: `${data.currentModule.progress}%` }} />
+                        </div>
+                        <span className="text-xs font-bold text-secondary">{data.currentModule.progress}%</span>
+                      </div>
+                    </div>
+                    <ChevronRight size={24} className="text-white/50" />
+                  </div>
+                </Card>
+              </Link>
+            </motion.div>
+          )}
+
+          {/* Recent Activity */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <Card className="p-6">
+              <h2 className="text-lg font-black text-primary-dark mb-4">Actividad Reciente</h2>
+              {data?.recentActivity?.length > 0 ? (
+                <div className="space-y-1">
+                  {data.recentActivity.map((a, i) => (
+                    <div key={i} className="flex items-start gap-3 p-3 rounded-xl hover:bg-gray-50 transition-all">
+                      <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center shrink-0",
+                        a.type === 'alert' ? 'bg-red-50 text-red-500' : a.type === 'achievement' ? 'bg-emerald-50 text-emerald-500' : 'bg-blue-50 text-blue-500'
+                      )}>
+                        {a.type === 'alert' ? <AlertTriangle size={14} /> : a.type === 'achievement' ? <Award size={14} /> : <Clock size={14} />}
+                      </div>
+                      <div className="min-w-0 flex-grow">
+                        <p className="text-xs font-bold text-text-main">{a.title}</p>
+                        <p className="text-[9px] font-semibold text-text-secondary mt-0.5">{a.time}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm font-semibold text-text-secondary text-center py-6">Sin actividad reciente</p>
+              )}
+            </Card>
+          </motion.div>
+        </div>
+
+        {/* Right Column */}
+        <div className="space-y-6">
+          {/* Quick Access */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+            className="grid grid-cols-2 gap-4">
+            {quickAccess.map((item) => (
+              <Link key={item.path} to={item.path}
+                className="bg-white rounded-3xl p-5 border border-gray-100 shadow-premium hover:shadow-lg transition-all text-center group">
+                <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3", item.color)}>
+                  <item.icon size={24} />
+                </div>
+                <p className="text-xs font-black text-text-main group-hover:text-primary transition-colors">{item.label}</p>
+              </Link>
+            ))}
+          </motion.div>
+
+          {/* Achievements */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-base font-black text-primary-dark">Logros</h2>
+                <Link to="/achievements" className="text-[10px] font-bold text-primary hover:text-primary-dark transition-colors">Ver todos</Link>
+              </div>
+              {data?.achievements?.length > 0 ? (
+                <div className="space-y-3">
+                  {data.achievements.map((a, i) => (
+                    <div key={i} className="flex items-center gap-3 p-2.5 bg-gray-50 rounded-2xl">
+                      <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center shrink-0",
+                        a.rarity === 'legendary' ? 'bg-amber-100 text-amber-500' :
+                        a.rarity === 'epic' ? 'bg-violet-100 text-violet-500' :
+                        a.rarity === 'rare' ? 'bg-blue-100 text-blue-500' : 'bg-gray-100 text-gray-500'
+                      )}>
+                        <Award size={16} />
+                      </div>
+                      <span className="text-[10px] font-bold text-text-main">{a.title}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <Award size={32} className="text-gray-200 mx-auto mb-2" />
+                  <p className="text-[10px] font-bold text-text-secondary">Completa actividades para ganar logros</p>
+                </div>
+              )}
+            </Card>
+          </motion.div>
+
+          {/* Level & XP */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+            <Card className="p-6 bg-gradient-to-br from-secondary/20 to-transparent border-secondary/20">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-2xl bg-primary flex items-center justify-center text-white shadow-lg">
+                  <Flame size={28} className="text-secondary" fill="#78F0C4" />
+                </div>
+                <div>
+                  <p className="text-2xl font-black text-primary-dark">Nivel {data?.user?.level || user?.level || 1}</p>
+                  <p className="text-xs font-bold text-text-secondary">{data?.user?.xp || user?.xp || 0} XP totales</p>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
         </div>
       </div>
-
-      <div className="border-t border-gray-200 mt-16 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs font-semibold text-gray-400">
-        <div>
-          © 2024 ChemSystem Platform · Editorial Científico High-End
-        </div>
-        <div className="flex gap-6">
-          <a href="#privacidad" className="hover:text-gray-600 transition-colors">Privacidad</a>
-          <a href="#terminos" className="hover:text-gray-600 transition-colors">Términos</a>
-          <a href="#soporte" className="hover:text-gray-600 transition-colors">Soporte Académico</a>
-        </div>
-      </div>
-
     </div>
   );
 };

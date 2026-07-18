@@ -1,73 +1,83 @@
-import React from 'react';
-import { User, Bell, Shield, Palette, Globe, CreditCard } from 'lucide-react';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
+import { Save, User, Mail, Camera } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { cn } from '../../utils/cn';
+import { useAuthStore } from '../../store/authStore';
+import { studentService } from '../../services/studentService';
 
 const Settings = () => {
+  const { user, login } = useAuthStore();
+  const [form, setForm] = useState({
+    name: user?.name || '',
+    email: user?.email || '',
+    avatar_url: user?.avatar_url || '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setMessage('');
+    try {
+      const updated = await studentService.updateProfile({ name: form.name, avatar_url: form.avatar_url });
+      login(updated, localStorage.getItem('chemsystem_token'));
+      setMessage('Perfil actualizado correctamente');
+    } catch (err) {
+      setMessage(err.message || 'Error al guardar');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      <div>
-        <h2 className="text-3xl font-bold text-text-main">Ajustes</h2>
-        <p className="text-text-secondary">Gestiona tu perfil, preferencias y suscripción.</p>
-      </div>
+    <div className="max-w-2xl mx-auto space-y-8">
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+        <h1 className="text-3xl font-black text-primary-dark tracking-tight">Configuración</h1>
+        <p className="text-text-secondary font-semibold mt-1">Administra tu perfil y preferencias</p>
+      </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-        {/* Navigation */}
-        <div className="space-y-1">
-          {[
-            { icon: User, label: 'Perfil' },
-            { icon: Bell, label: 'Notificaciones' },
-            { icon: Shield, label: 'Seguridad' },
-            { icon: Palette, label: 'Apariencia' },
-            { icon: Globe, label: 'Idioma' },
-            { icon: CreditCard, label: 'Suscripción' },
-          ].map((item, idx) => (
-            <button 
-              key={idx} 
-              className={cn(
-                "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all",
-                idx === 0 ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-text-secondary hover:bg-gray-100"
-              )}
-            >
-              <item.icon size={18} />
-              <span className="font-medium">{item.label}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Content */}
-        <div className="md:col-span-3 space-y-6">
-          <Card className="p-8 space-y-6">
-            <h3 className="text-xl font-bold text-text-main">Información Personal</h3>
-            <div className="flex items-center gap-6 pb-6 border-b border-gray-100">
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-primary to-accent" />
-              <div className="space-y-2">
-                <Button variant="outline" size="sm">Cambiar Foto</Button>
-                <p className="text-[10px] text-text-secondary uppercase font-bold">JPG, GIF o PNG. Max 2MB.</p>
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+        <Card className="p-8">
+          <form onSubmit={handleSave} className="space-y-6">
+            <div className="flex items-center gap-6 mb-8">
+              <div className="relative">
+                <div className="w-20 h-20 rounded-2xl bg-gray-200 overflow-hidden border-2 border-white shadow-md">
+                  <img src={form.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${form.name || 'User'}`}
+                    alt="Avatar" className="w-full h-full object-cover" />
+                </div>
+                <button type="button" className="absolute -bottom-1 -right-1 w-7 h-7 bg-primary text-white rounded-lg flex items-center justify-center shadow">
+                  <Camera size={14} />
+                </button>
+              </div>
+              <div>
+                <p className="text-lg font-black text-primary-dark">{form.name || 'Usuario'}</p>
+                <p className="text-xs font-bold text-text-secondary">{user?.role === 'student' ? 'Estudiante' : user?.role}</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Input label="Nombre" defaultValue="Juan Pérez" />
-              <Input label="Apellido" defaultValue="Científico" />
-              <Input label="Correo" defaultValue="juan@u-quimica.edu" disabled />
-              <Input label="Institución" defaultValue="Universidad de Ciencias" />
-            </div>
+            <Input label="Nombre completo" placeholder="Tu nombre" value={form.name}
+              onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
+            <Input label="Correo electrónico" placeholder="correo@ejemplo.com" value={form.email} disabled />
+            <Input label="URL de avatar" placeholder="https://ejemplo.com/avatar.png" value={form.avatar_url}
+              onChange={e => setForm(f => ({ ...f, avatar_url: e.target.value }))} />
 
-            <div className="pt-4">
-              <Button>Guardar Cambios</Button>
-            </div>
-          </Card>
+            {message && (
+              <div className={cn(
+                "text-xs font-bold px-4 py-3 rounded-xl",
+                message.includes('actualizado') ? 'bg-emerald-50 text-emerald-500' : 'bg-red-50 text-red-500'
+              )}>{message}</div>
+            )}
 
-          <Card className="p-8 border-red-100 bg-red-50/50">
-            <h3 className="text-xl font-bold text-red-600 mb-2">Zona de Peligro</h3>
-            <p className="text-sm text-text-secondary mb-6">Eliminar tu cuenta borrará todos tus datos y progreso de forma permanente.</p>
-            <Button variant="ghost" className="text-red-500 hover:bg-red-100">Eliminar Cuenta</Button>
-          </Card>
-        </div>
-      </div>
+            <Button type="submit" className="w-full bg-primary-dark text-white" isLoading={saving}>
+              <Save size={18} /> Guardar Cambios
+            </Button>
+          </form>
+        </Card>
+      </motion.div>
     </div>
   );
 };

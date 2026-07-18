@@ -165,7 +165,7 @@ const Header = ({ onMenuClick }) => {
         <div className="flex items-center gap-3 shrink-0">
           <div className="text-right hidden sm:block">
             <p className="text-xs sm:text-sm font-black text-primary-dark leading-none mb-1">{user?.name || 'Usuario'}</p>
-            <p className="text-[9px] font-bold text-text-secondary uppercase tracking-widest">{user?.role === 'teacher' ? 'Docente' : 'Estudiante'}</p>
+            <p className="text-[9px] font-bold text-text-secondary uppercase tracking-widest">{user?.role === 'teacher' ? 'Docente' : user?.role === 'parent' ? 'Padre de Familia' : 'Estudiante'}</p>
           </div>
           <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gray-200 border-2 border-white shadow-md overflow-hidden shrink-0">
             <img 

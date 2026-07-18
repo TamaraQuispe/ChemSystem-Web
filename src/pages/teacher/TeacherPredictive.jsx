@@ -1,219 +1,177 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  BrainCircuit, 
-  AlertTriangle, 
-  TrendingDown, 
-  Zap, 
-  Users, 
-  Calendar,
-  ChevronRight,
-  Info,
-  Sparkles,
-  ArrowDownRight,
-  MousePointer2,
-  Clock,
-  FlaskConical
+import {
+  BrainCircuit, AlertTriangle, TrendingDown, Zap, Users,
+  ChevronRight, Info, Sparkles, Clock, RefreshCw
 } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
-import { Badge } from '../../components/ui/Badge';
 import { cn } from '../../utils/cn';
-
-const highFrustrationStudents = [
-  { name: 'Marco Valenzuela', photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Marco', frustration: 88, topic: 'Estequiometría Avanzada', blockedTime: 'hace 24m' },
-  { name: 'Elena Rodríguez', photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Elena', frustration: 72, topic: 'Equilibrio Ácido-Base', blockedTime: 'hace 12m' },
-];
+import { teacherService } from '../../services/teacherService';
+import { useTeacherStore } from '../../store/teacherStore';
 
 const TeacherPredictive = () => {
-  return (
-    <div className="space-y-10 pb-20">
-      {/* Header Section */}
-      <div className="space-y-4">
-        <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Dashboard de Alertas Estratégicas</p>
-        <h1 className="text-5xl font-black text-primary-dark tracking-tighter">Análisis Predictivo de Aula</h1>
-        <p className="text-text-secondary font-medium max-w-2xl text-lg">
-          Intervenciones pedagógicas basadas en el comportamiento cognitivo en tiempo real de sus estudiantes de Química Orgánica.
-        </p>
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const { classes, selectedClass, setSelectedClass, fetchClasses } = useTeacherStore();
+
+  useEffect(() => { fetchClasses(); }, []);
+  useEffect(() => {
+    if (!selectedClass) return;
+    setLoading(true);
+    setError(null);
+    teacherService.getPredictiveData(selectedClass.id)
+      .then(setData)
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [selectedClass?.id]);
+
+  if (loading && !data) {
+    return (
+      <div className="space-y-8">
+        <div className="w-80 h-9 bg-gray-200 rounded-lg animate-pulse" />
+        <div className="h-64 bg-white rounded-3xl animate-pulse border border-gray-100" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {[1, 2].map(i => <div key={i} className="h-48 bg-white rounded-3xl animate-pulse border border-gray-100" />)}
+        </div>
       </div>
+    );
+  }
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        <div className="lg:col-span-8 space-y-10">
-          
-          {/* Main Hero Alert Card */}
-          <Card className="p-10 bg-red-50/50 border-none rounded-[3rem] flex items-center justify-between relative overflow-hidden group">
-             <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:scale-110 transition-transform duration-700">
-                <AlertTriangle size={200} />
-             </div>
-             <div className="relative z-10 flex items-center gap-10">
-                <div className="text-center">
-                   <h2 className="text-8xl font-black text-red-500 tracking-tighter leading-none">08</h2>
-                   <p className="text-[10px] font-black text-red-500 uppercase tracking-widest mt-2">Estudiantes en Riesgo</p>
+  if (error) {
+    return (
+      <Card className="p-12 text-center">
+        <AlertTriangle size={32} className="text-red-400 mx-auto mb-3" />
+        <p className="text-sm font-bold text-text-secondary mb-3">{error}</p>
+        <button onClick={() => teacherService.getPredictiveData(selectedClass?.id).then(setData)}
+          className="px-5 py-2 bg-primary text-white rounded-2xl font-bold text-xs">Reintentar</button>
+      </Card>
+    );
+  }
+
+  const { atRisk, suggestions, totalStudents, atRiskCount } = data || { atRisk: [], suggestions: [], totalStudents: 0, atRiskCount: 0 };
+
+  return (
+    <div className="space-y-8">
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Dashboard de Alertas Estratégicas</p>
+            <h1 className="text-3xl font-black text-primary-dark tracking-tight">Análisis Predictivo</h1>
+            <p className="text-text-secondary font-semibold mt-1">Intervenciones basadas en el rendimiento de tus estudiantes</p>
+          </div>
+          <button onClick={() => teacherService.getPredictiveData(selectedClass?.id).then(setData)}
+            className="p-2.5 text-text-secondary hover:bg-gray-100 rounded-xl transition-all">
+            <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
+          </button>
+        </div>
+      </motion.div>
+
+      {classes.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {classes.map(c => (
+            <button key={c.id} onClick={() => setSelectedClass(c)}
+              className={cn("px-5 py-2.5 rounded-2xl font-bold text-xs transition-all whitespace-nowrap",
+                selectedClass?.id === c.id ? "bg-primary text-white shadow-lg shadow-primary/20" : "bg-white text-text-secondary border border-gray-100"
+              )}>{c.name}</button>
+          ))}
+        </div>
+      )}
+
+      {atRiskCount > 0 && (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <Card className="p-6 bg-gradient-to-br from-red-500 to-red-600 text-white border-none">
+            <div className="flex items-start gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-white/20 flex items-center justify-center shrink-0">
+                <AlertTriangle size={28} />
+              </div>
+              <div className="flex-grow">
+                <h2 className="text-xl font-black text-white mb-1">Alerta: {atRiskCount} estudiante(s) en riesgo</h2>
+                <p className="text-sm font-semibold text-white/80 mb-4">Se detectaron estudiantes con bajo rendimiento sostenido. Se recomienda intervención temprana.</p>
+                <div className="flex gap-2">
+                  {['Programar tutoría', 'Generar reporte', 'Notificar padres'].map((action, i) => (
+                    <button key={i} className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-xl text-xs font-bold transition-all active:scale-95">
+                      {action}
+                    </button>
+                  ))}
                 </div>
-                <div className="w-px h-24 bg-red-200" />
-                <div className="p-4 rounded-3xl bg-white text-red-500 shadow-sm">
-                   <AlertTriangle size={40} />
-                </div>
-             </div>
+              </div>
+              <div className="text-right shrink-0">
+                <p className="text-4xl font-black text-white">{atRiskCount}</p>
+                <p className="text-xs font-bold text-white/70">de {totalStudents}</p>
+              </div>
+            </div>
           </Card>
+        </motion.div>
+      )}
 
-          {/* High Frustration Section */}
-          <div className="space-y-8">
-             <div className="flex items-center justify-between">
-                <h3 className="text-3xl font-black text-primary-dark">Estudiantes con Alta Frustración</h3>
-                <button className="flex items-center gap-2 text-primary font-black text-xs uppercase tracking-widest hover:underline">
-                   Ver reporte completo <ChevronRight size={18} />
-                </button>
-             </div>
-
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {highFrustrationStudents.map((student, i) => (
-                  <Card key={i} className="p-8 border-none shadow-premium rounded-[2.5rem] bg-white space-y-6 group">
-                     <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                           <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-gray-100 group-hover:scale-110 transition-transform">
-                              <img src={student.photo} alt={student.name} />
-                           </div>
-                           <div>
-                              <h4 className="text-xl font-black text-primary-dark">{student.name}</h4>
-                              <Badge className="bg-gray-100 text-text-secondary border-none text-[10px] font-black py-1">Bloqueado {student.blockedTime}</Badge>
-                           </div>
-                        </div>
-                        <div className="text-red-500">
-                           <ArrowDownRight size={24} />
-                        </div>
-                     </div>
-
-                     <div className="space-y-3">
-                        <div className="flex justify-between items-end">
-                           <span className="text-[10px] font-black text-text-secondary uppercase tracking-widest">Nivel de Frustración</span>
-                           <span className="text-sm font-black text-red-500">{student.frustration}%</span>
-                        </div>
-                        <div className="h-2 w-full bg-gray-50 rounded-full overflow-hidden">
-                           <motion.div 
-                              initial={{ width: 0 }} 
-                              animate={{ width: `${student.frustration}%` }} 
-                              className="h-full bg-red-500" 
-                           />
-                        </div>
-                     </div>
-
-                     <div className="p-4 rounded-2xl bg-gray-50 flex items-center gap-4">
-                        <div className="p-2 rounded-xl bg-white text-primary">
-                           <FlaskConical size={18} />
-                        </div>
-                        <div>
-                           <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest">Tema:</p>
-                           <p className="text-xs font-bold text-primary-dark">{student.topic}</p>
-                        </div>
-                     </div>
-
-                     <Button className="w-full h-14 rounded-2xl bg-primary-dark text-white font-black">
-                        Intervenir Ahora
-                     </Button>
-                  </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+          <Card className="p-6">
+            <h2 className="text-lg font-black text-primary-dark mb-6">Estudiantes con Dificultades</h2>
+            {atRisk.length === 0 ? (
+              <div className="text-center py-12">
+                <Zap size={48} className="text-emerald-300 mx-auto mb-4" />
+                <p className="text-sm font-bold text-text-secondary">No hay estudiantes en riesgo actualmente</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {atRisk.map((s, idx) => (
+                  <div key={s.id} className="p-4 bg-red-50 rounded-2xl border border-red-100">
+                    <div className="flex items-center gap-4 mb-3">
+                      <div className="w-10 h-10 rounded-xl bg-gray-100 overflow-hidden">
+                        <img src={s.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${s.name}`} alt={s.name} className="w-full h-full object-cover" />
+                      </div>
+                      <div className="flex-grow">
+                        <p className="text-sm font-black text-text-main">{s.name}</p>
+                        <p className="text-[10px] font-bold text-text-secondary">Promedio: {s.average}% · Tendencia: {s.trend > 0 ? '+' : ''}{s.trend}%</p>
+                      </div>
+                      <span className={cn(
+                        "text-[9px] font-bold px-2.5 py-1 rounded-lg uppercase tracking-wider",
+                        s.riskLevel === 'high' ? 'bg-red-500/20 text-red-500' : 'bg-amber-500/20 text-amber-500'
+                      )}>{s.riskLevel === 'high' ? 'Crítico' : 'Alerta'}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {s.suggestions?.map((sg, si) => (
+                        <span key={si} className="text-[9px] font-semibold px-2.5 py-1 bg-white rounded-lg text-text-secondary border border-red-100">
+                          {sg}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 ))}
-             </div>
-          </div>
+              </div>
+            )}
+          </Card>
+        </motion.div>
 
-          {/* Focus Points Section */}
-          <div className="space-y-8">
-             <h3 className="text-3xl font-black text-primary-dark">Focos de Refuerzo Grupal</h3>
-             <Card className="p-10 border-none shadow-premium rounded-[3rem] bg-white relative overflow-hidden group">
-                <div className="absolute inset-0 opacity-5 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary to-transparent pointer-events-none" />
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-                   <div className="space-y-4">
-                      <div className="flex justify-between items-end">
-                         <h5 className="text-[10px] font-black text-text-secondary uppercase tracking-widest">Orbitales</h5>
-                         <span className="text-2xl font-black text-primary-dark">92%</span>
-                      </div>
-                      <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                         <div className="h-full w-[92%] bg-secondary" />
-                      </div>
-                      <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest">Comprensión Óptima</p>
-                   </div>
-
-                   <div className="space-y-4">
-                      <div className="flex justify-between items-end">
-                         <h5 className="text-[10px] font-black text-text-secondary uppercase tracking-widest">Estequiometría</h5>
-                         <span className="text-2xl font-black text-primary-dark">45%</span>
-                      </div>
-                      <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                         <div className="h-full w-[45%] bg-red-500" />
-                      </div>
-                      <Badge className="bg-red-500 text-white border-none font-black text-[9px] uppercase px-3 py-1">Refuerzo Crítico</Badge>
-                   </div>
-
-                   <div className="space-y-4">
-                      <div className="flex justify-between items-end">
-                         <h5 className="text-[10px] font-black text-text-secondary uppercase tracking-widest">Cinética</h5>
-                         <span className="text-2xl font-black text-primary-dark">68%</span>
-                      </div>
-                      <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                         <div className="h-full w-[68%] bg-blue-400" />
-                      </div>
-                      <p className="text-[9px] font-black text-text-secondary uppercase tracking-widest">Progresión Media</p>
-                   </div>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+          <Card className="p-6">
+            <div className="flex items-center gap-2 mb-6">
+              <Sparkles size={20} className="text-primary" />
+              <h2 className="text-lg font-black text-primary-dark">Sugerencias de la IA</h2>
+            </div>
+            <div className="space-y-4">
+              {suggestions.length === 0 ? (
+                <p className="text-sm font-semibold text-text-secondary text-center py-8">Sin sugerencias disponibles.</p>
+              ) : suggestions.map((sg, idx) => (
+                <div key={idx} className={cn(
+                  "p-4 rounded-2xl",
+                  sg.type === 'warning' ? 'bg-amber-50 border border-amber-100' : 'bg-blue-50 border border-blue-100'
+                )}>
+                  <div className="flex items-start gap-3">
+                    <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center shrink-0",
+                      sg.type === 'warning' ? 'bg-amber-100 text-amber-500' : 'bg-blue-100 text-blue-500'
+                    )}>
+                      {sg.type === 'warning' ? <AlertTriangle size={16} /> : <Info size={16} />}
+                    </div>
+                    <p className="text-xs font-semibold text-text-secondary leading-relaxed">{sg.message}</p>
+                  </div>
                 </div>
-             </Card>
-          </div>
-        </div>
-
-        {/* Sidebar AI Insights */}
-        <div className="lg:col-span-4 space-y-8">
-           <Card className="p-10 border-none shadow-premium rounded-[3rem] bg-white space-y-10 relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-6 text-purple-500 opacity-20">
-                 <Sparkles size={100} />
-              </div>
-              <div className="flex items-center gap-3">
-                 <div className="p-3 rounded-2xl bg-purple-500 text-white shadow-lg shadow-purple-500/20">
-                    <BrainCircuit size={28} />
-                 </div>
-                 <h3 className="text-2xl font-black text-primary-dark">Sugerencias IA</h3>
-              </div>
-
-              <div className="space-y-8">
-                 <div className="flex gap-4">
-                    <div className="p-3 h-fit rounded-xl bg-purple-50 text-purple-500">
-                       <Zap size={20} />
-                    </div>
-                    <div>
-                       <p className="text-sm font-medium text-text-main leading-relaxed">
-                          Lanzar cuestionario de repaso sobre <span className="font-black text-purple-500">Relaciones Molares</span> para estabilizar la base del 40% de la clase.
-                       </p>
-                       <Button className="mt-4 rounded-xl border-2 border-purple-500 text-purple-500 font-black uppercase tracking-widest text-[10px] h-10 px-6 hover:bg-purple-500 hover:text-white transition-all">
-                          Programar ahora
-                       </Button>
-                    </div>
-                 </div>
-
-                 <div className="flex gap-4">
-                    <div className="p-3 h-fit rounded-xl bg-purple-50 text-purple-500">
-                       <Users size={20} />
-                    </div>
-                    <div>
-                       <p className="text-sm font-medium text-text-main leading-relaxed">
-                          Formar grupos de mentoría entre pares: Asignar a <span className="font-black text-purple-500">Ana S.</span> para apoyar a <span className="font-black text-purple-500">Marco V.</span> en el módulo actual.
-                       </p>
-                       <Button className="mt-4 rounded-xl border-2 border-purple-500 text-purple-500 font-black uppercase tracking-widest text-[10px] h-10 px-6 hover:bg-purple-500 hover:text-white transition-all">
-                          Crear Grupos
-                       </Button>
-                    </div>
-                 </div>
-              </div>
-
-              <Card className="p-6 bg-gray-50 border-none rounded-3xl space-y-4">
-                 <div className="flex items-center gap-2">
-                    <Sparkles className="text-green-500" size={16} />
-                    <span className="text-[10px] font-black text-green-500 uppercase tracking-widest">Insight Predictivo</span>
-                 </div>
-                 <p className="text-xs font-bold text-text-secondary italic leading-relaxed">
-                    "La curva de aprendizaje sugiere que si no se refuerza la Nomenclatura IUPAC esta semana, el 15% adicional de los estudiantes entrará en zona de riesgo."
-                 </p>
-              </Card>
-           </Card>
-        </div>
+              ))}
+            </div>
+          </Card>
+        </motion.div>
       </div>
     </div>
   );

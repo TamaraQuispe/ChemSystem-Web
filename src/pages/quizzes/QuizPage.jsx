@@ -29,6 +29,7 @@ import { Quiz3D } from '../../components/quizzes/Quiz3D';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { Badge } from '../../components/ui/Badge';
+import { studentService } from '../../services/studentService';
 
 const QuizPage = () => {
   const navigate = useNavigate();
@@ -38,6 +39,19 @@ const QuizPage = () => {
   const [isSaved1, setIsSaved1] = useState(false);
   const [isSaved2, setIsSaved2] = useState(false);
   const [isLoadingCuriosity, setIsLoadingCuriosity] = useState(false);
+  const [quizScore, setQuizScore] = useState(85);
+  const [xpEarned] = useState(85);
+  const [savingQuiz, setSavingQuiz] = useState(false);
+
+  const handleQuizComplete = async () => {
+    setSavingQuiz(true);
+    setIsCompleted(true);
+    setActiveTab('retroalimentacion');
+    try {
+      await studentService.completeQuiz({ score: quizScore, xp_earned: xpEarned, time_spent_seconds: 165 });
+    } catch { /* fallback silencioso */ }
+    setSavingQuiz(false);
+  };
 
   // Triggering alternate curiosities loaded simulation
   const handleLoadAnotherCuriosity = () => {
@@ -810,10 +824,7 @@ const QuizPage = () => {
               Pista
             </Button>
             <button 
-              onClick={() => {
-                setIsCompleted(true);
-                setActiveTab('retroalimentacion');
-              }}
+              onClick={handleQuizComplete}
               className="flex items-center gap-2 text-text-secondary font-bold hover:text-primary transition-colors"
             >
               Saltar <FastForward size={18} />
@@ -840,10 +851,7 @@ const QuizPage = () => {
             </div>
 
             <Button 
-              onClick={() => {
-                setIsCompleted(true);
-                setActiveTab('retroalimentacion');
-              }}
+              onClick={handleQuizComplete}
               size="lg" 
               className="px-12 h-14 bg-primary-dark text-white rounded-2xl shadow-2xl shadow-primary/30 gap-3 group"
             >

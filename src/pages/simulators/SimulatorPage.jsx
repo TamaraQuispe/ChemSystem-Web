@@ -46,6 +46,39 @@ import { cn } from '../../utils/cn';
 
 const ElectrolysisPage = lazy(() => import('./ElectrolysisPage'));
 const CatalysisPage = lazy(() => import('./CatalysisPage'));
+const ReactionRatesPage = lazy(() => import('./ReactionRatesPage'));
+const EquilibriumPage = lazy(() => import('./EquilibriumPage'));
+const ThermodynamicsPage = lazy(() => import('./ThermodynamicsPage'));
+const BalancePage = lazy(() => import('./BalancePage'));
+const FlameTestPage = lazy(() => import('./FlameTestPage'));
+const StoichiometryPage = lazy(() => import('./StoichiometryPage'));
+const GasLawsPage = lazy(() => import('./GasLawsPage'));
+const SolubilityPage = lazy(() => import('./SolubilityPage'));
+const RedoxPage = lazy(() => import('./RedoxPage'));
+const BondingPage = lazy(() => import('./BondingPage'));
+const OrganicNomenclaturePage = lazy(() => import('./OrganicNomenclaturePage'));
+const TitrationPage = lazy(() => import('./TitrationPage'));
+const AcidBasePage = lazy(() => import('./AcidBasePage'));
+const ChromatographyPage = lazy(() => import('./ChromatographyPage'));
+const ElectrochemistryPage = lazy(() => import('./ElectrochemistryPage'));
+const MatterStatesPage = lazy(() => import('./MatterStatesPage'));
+const DensityPage = lazy(() => import('./DensityPage'));
+const SolutionsPage = lazy(() => import('./SolutionsPage'));
+const pHMeterPage = lazy(() => import('./pHMeterPage'));
+const CalorimetryPage = lazy(() => import('./CalorimetryPage'));
+const SpectrumPage = lazy(() => import('./SpectrumPage'));
+const SpectroscopyPage = lazy(() => import('./SpectroscopyPage'));
+const HessLawPage = lazy(() => import('./HessLawPage'));
+const KineticsAdvancedPage = lazy(() => import('./KineticsAdvancedPage'));
+const QuantumPage = lazy(() => import('./QuantumPage'));
+const NuclearPage = lazy(() => import('./NuclearPage'));
+const ChemicalCyclesPage = lazy(() => import('./ChemicalCyclesPage'));
+const CrystallographyPage = lazy(() => import('./CrystallographyPage'));
+const PolymerPage = lazy(() => import('./PolymerPage'));
+const BiochemistryPage = lazy(() => import('./BiochemistryPage'));
+const EnvironmentalPage = lazy(() => import('./EnvironmentalPage'));
+const GlasswarePage = lazy(() => import('./GlasswarePage'));
+const PeriodicTablePage = lazy(() => import('./PeriodicTablePage'));
 
 const LoadingFallback = () => (
   <div className="flex items-center justify-center h-full min-h-[400px]">
@@ -97,6 +130,273 @@ const SimulatorPage = () => {
     );
   }
 
+  if (id === 'reaction-rates') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <ReactionRatesPage />
+      </Suspense>
+    );
+  }
+
+  if (id === 'equilibrium') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <EquilibriumPage />
+      </Suspense>
+    );
+  }
+
+  if (id === 'thermodynamics') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <ThermodynamicsPage />
+      </Suspense>
+    );
+  }
+
+  if (id === 'balance') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <BalancePage />
+      </Suspense>
+    );
+  }
+
+  if (id === 'flame-test') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <FlameTestPage />
+      </Suspense>
+    );
+  }
+
+  if (id === 'stoichiometry') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <StoichiometryPage />
+      </Suspense>
+    );
+  }
+
+  if (id === 'gas-laws') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <GasLawsPage />
+      </Suspense>
+    );
+  }
+
+  if (id === 'solubility') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <SolubilityPage />
+      </Suspense>
+    );
+  }
+
+  if (id === 'redox') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <RedoxPage />
+      </Suspense>
+    );
+  }
+
+  if (id === 'bonding') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <BondingPage />
+      </Suspense>
+    );
+  }
+
+  if (id === 'organic-nomenclature') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <OrganicNomenclaturePage />
+      </Suspense>
+    );
+  }
+
+  if (id === 'titration') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <TitrationPage />
+      </Suspense>
+    );
+  }
+
+  if (id === 'acid-base') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <AcidBasePage />
+      </Suspense>
+    );
+  }
+
+  if (id === 'chromatography') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <ChromatographyPage />
+      </Suspense>
+    );
+  }
+
+  if (id === 'electrochemistry') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <ElectrochemistryPage />
+      </Suspense>
+    );
+  }
+
+  if (id === 'matter-states') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <MatterStatesPage />
+      </Suspense>
+    );
+  }
+
+  if (id === 'density') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <DensityPage />
+      </Suspense>
+    );
+  }
+
+  if (id === 'solutions') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <SolutionsPage />
+      </Suspense>
+    );
+  }
+
+  if (id === 'ph-meter') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <pHMeterPage />
+      </Suspense>
+    );
+  }
+
+  if (id === 'calorimetry') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <CalorimetryPage />
+      </Suspense>
+    );
+  }
+
+  if (id === 'spectrum') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <SpectrumPage />
+      </Suspense>
+    );
+  }
+
+  if (id === 'spectroscopy') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <SpectroscopyPage />
+      </Suspense>
+    );
+  }
+
+  if (id === 'hess-law') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <HessLawPage />
+      </Suspense>
+    );
+  }
+
+  if (id === 'kinetics-advanced') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <KineticsAdvancedPage />
+      </Suspense>
+    );
+  }
+
+  if (id === 'quantum') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <QuantumPage />
+      </Suspense>
+    );
+  }
+
+  if (id === 'nuclear') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <NuclearPage />
+      </Suspense>
+    );
+  }
+
+  if (id === 'chemical-cycles') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <ChemicalCyclesPage />
+      </Suspense>
+    );
+  }
+
+  if (id === 'crystallography') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <CrystallographyPage />
+      </Suspense>
+    );
+  }
+
+  if (id === 'polymer') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <PolymerPage />
+      </Suspense>
+    );
+  }
+
+  if (id === 'biochemistry') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <BiochemistryPage />
+      </Suspense>
+    );
+  }
+
+  if (id === 'environmental') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <EnvironmentalPage />
+      </Suspense>
+    );
+  }
+
+  if (id === 'glassware') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <GlasswarePage />
+      </Suspense>
+    );
+  }
+
+  if (id === 'periodic-table') {
+    return (
+      <Suspense fallback={<LoadingFallback />}>
+        <PeriodicTablePage />
+      </Suspense>
+    );
+  }
+
+  const Icon = sim?.icon || HelpCircle;
+  const visual = categoryVisualHints[sim?.difficultyKey] || categoryVisualHints['Básico'];
+
   if (!sim) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[500px] space-y-6">
@@ -114,9 +414,6 @@ const SimulatorPage = () => {
       </div>
     );
   }
-
-  const Icon = sim.icon;
-  const visual = categoryVisualHints[sim.difficultyKey] || categoryVisualHints['Básico'];
 
   // Interactive state
   const [temperature, setTemperature] = useState(298);

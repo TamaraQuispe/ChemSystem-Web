@@ -19,6 +19,13 @@ import TeacherGrades from './pages/teacher/TeacherGrades';
 import TeacherMonitoring from './pages/teacher/TeacherMonitoring';
 import TeacherPredictive from './pages/teacher/TeacherPredictive';
 import TeacherCommunity from './pages/teacher/TeacherCommunity';
+import ParentLayout from './layouts/ParentLayout';
+import ParentRoute from './components/parent/ParentRoute';
+import ParentDashboard from './pages/parent/ParentDashboard';
+import ParentAlerts from './pages/parent/ParentAlerts';
+import ParentRecommendations from './pages/parent/ParentRecommendations';
+import ParentMessages from './pages/parent/ParentMessages';
+import ParentAchievements from './pages/parent/ParentAchievements';
 import { useAuthStore } from './store/authStore';
 
 // Lazy loaded advanced modules
@@ -28,6 +35,9 @@ const QuizPage = lazy(() => import('./pages/quizzes/QuizPage'));
 const MolecularPage = lazy(() => import('./pages/molecular/MolecularPage'));
 const AIPathPage = lazy(() => import('./pages/ai-learning/AIPathPage'));
 const ModulesPage = lazy(() => import('./pages/quizzes/ModulesPage'));
+const ModuleDetail = lazy(() => import('./pages/modules/ModuleDetail'));
+const CourseDetail = lazy(() => import('./pages/courses/CourseDetail'));
+const CertificateViewer = lazy(() => import('./pages/courses/CertificateViewer'));
 const LessonsPage = lazy(() => import('./pages/lessons/LessonsPage'));
 const LessonViewer = lazy(() => import('./pages/lessons/LessonViewer'));
 
@@ -74,6 +84,15 @@ function App() {
           <Route path="modules" element={
             <Suspense fallback={<LoadingFallback />}><ModulesPage /></Suspense>
           } />
+          <Route path="modules/:id" element={
+            <Suspense fallback={<LoadingFallback />}><ModuleDetail /></Suspense>
+          } />
+          <Route path="modules/course/:courseSlug" element={
+            <Suspense fallback={<LoadingFallback />}><CourseDetail /></Suspense>
+          } />
+          <Route path="certificates" element={
+            <Suspense fallback={<LoadingFallback />}><CertificateViewer /></Suspense>
+          } />
           <Route path="molecular/builder" element={
             <Suspense fallback={<LoadingFallback />}><MolecularPage /></Suspense>
           } />
@@ -101,6 +120,17 @@ function App() {
           <Route path="monitoring" element={<TeacherMonitoring />} />
           <Route path="predictive" element={<TeacherPredictive />} />
           <Route path="community" element={<TeacherCommunity />} />
+          <Route path="settings" element={<Settings />} />
+        </Route>
+
+        {/* Parent Routes (Role-protected) */}
+        <Route path="/parent" element={isAuthenticated ? <ParentRoute><ParentLayout /></ParentRoute> : <Navigate to="/login" />}>
+          <Route index element={<ParentDashboard />} />
+          <Route path="dashboard" element={<ParentDashboard />} />
+          <Route path="alerts" element={<ParentAlerts />} />
+          <Route path="recommendations" element={<ParentRecommendations />} />
+          <Route path="messages" element={<ParentMessages />} />
+          <Route path="achievements" element={<ParentAchievements />} />
           <Route path="settings" element={<Settings />} />
         </Route>
 

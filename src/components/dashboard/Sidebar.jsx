@@ -15,7 +15,9 @@ import {
   ChevronRight,
   Sparkles,
   Zap,
-  X
+  X,
+  GraduationCap,
+  FileText
 } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useAuthStore } from '../../store/authStore';
@@ -25,8 +27,9 @@ const menuItems = [
   { icon: LayoutDashboard, label: 'Panel Principal', path: '/home' },
   { icon: FlaskConical, label: 'Simuladores', path: '/simulators' },
   { icon: BookOpen, label: 'Micro-lecciones', path: '/lessons' },
-  { icon: BookMarked, label: 'Mis Módulos', path: '/modules' },
+  { icon: GraduationCap, label: 'Módulos y Cursos', path: '/modules' },
   { icon: Award, label: 'Logros', path: '/achievements' },
+  { icon: FileText, label: 'Certificados', path: '/certificates' },
   { icon: LineChart, label: 'Rendimiento', path: '/analytics' },
   { icon: Users, label: 'Comunidad', path: '/community' },
 ];

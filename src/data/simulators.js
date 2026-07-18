@@ -42,7 +42,8 @@ const SIMULATORS = [
     xp: 150,
     time: '10 min',
     color: 'text-blue-500',
-    bg: 'bg-blue-50'
+    bg: 'bg-blue-50',
+    mode: 'periodic-table'
   },
   {
     id: 'balance',
@@ -54,7 +55,8 @@ const SIMULATORS = [
     xp: 300,
     time: '15 min',
     color: 'text-purple-500',
-    bg: 'bg-purple-50'
+    bg: 'bg-purple-50',
+    mode: 'equation'
   },
   {
     id: 'matter-states',
@@ -66,7 +68,8 @@ const SIMULATORS = [
     xp: 200,
     time: '12 min',
     color: 'text-orange-500',
-    bg: 'bg-orange-50'
+    bg: 'bg-orange-50',
+    mode: 'particle'
   },
   {
     id: 'bonding',
@@ -78,7 +81,8 @@ const SIMULATORS = [
     xp: 500,
     time: '25 min',
     color: 'text-emerald-500',
-    bg: 'bg-emerald-50'
+    bg: 'bg-emerald-50',
+    mode: 'builder'
   },
   {
     id: 'titration',
@@ -90,7 +94,8 @@ const SIMULATORS = [
     xp: 450,
     time: '20 min',
     color: 'text-red-500',
-    bg: 'bg-red-50'
+    bg: 'bg-red-50',
+    mode: 'titration'
   },
   {
     id: 'spectrum',
@@ -102,7 +107,8 @@ const SIMULATORS = [
     xp: 350,
     time: '18 min',
     color: 'text-indigo-500',
-    bg: 'bg-indigo-50'
+    bg: 'bg-indigo-50',
+    mode: 'explorer'
   },
   {
     id: 'catalysis',
@@ -126,7 +132,8 @@ const SIMULATORS = [
     xp: 150,
     time: '10 min',
     color: 'text-sky-500',
-    bg: 'bg-sky-50'
+    bg: 'bg-sky-50',
+    mode: 'particle'
   },
   {
     id: 'solutions',
@@ -138,7 +145,8 @@ const SIMULATORS = [
     xp: 200,
     time: '12 min',
     color: 'text-teal-500',
-    bg: 'bg-teal-50'
+    bg: 'bg-teal-50',
+    mode: 'equation'
   },
   {
     id: 'calorimetry',
@@ -150,7 +158,8 @@ const SIMULATORS = [
     xp: 350,
     time: '20 min',
     color: 'text-orange-500',
-    bg: 'bg-orange-50'
+    bg: 'bg-orange-50',
+    mode: 'explorer'
   },
   {
     id: 'reaction-rates',
@@ -186,7 +195,8 @@ const SIMULATORS = [
     xp: 450,
     time: '20 min',
     color: 'text-violet-500',
-    bg: 'bg-violet-50'
+    bg: 'bg-violet-50',
+    mode: 'equation'
   },
   {
     id: 'thermodynamics',
@@ -210,7 +220,8 @@ const SIMULATORS = [
     xp: 150,
     time: '10 min',
     color: 'text-pink-500',
-    bg: 'bg-pink-50'
+    bg: 'bg-pink-50',
+    mode: 'titration'
   },
   {
     id: 'chromatography',
@@ -222,7 +233,8 @@ const SIMULATORS = [
     xp: 150,
     time: '10 min',
     color: 'text-fuchsia-500',
-    bg: 'bg-fuchsia-50'
+    bg: 'bg-fuchsia-50',
+    mode: 'explorer'
   },
   {
     id: 'glassware',
@@ -234,7 +246,8 @@ const SIMULATORS = [
     xp: 100,
     time: '8 min',
     color: 'text-lime-500',
-    bg: 'bg-lime-50'
+    bg: 'bg-lime-50',
+    mode: 'workbench'
   },
   {
     id: 'flame-test',
@@ -246,7 +259,8 @@ const SIMULATORS = [
     xp: 150,
     time: '10 min',
     color: 'text-orange-500',
-    bg: 'bg-orange-50'
+    bg: 'bg-orange-50',
+    mode: 'explorer'
   },
   {
     id: 'gas-laws',
@@ -258,7 +272,8 @@ const SIMULATORS = [
     xp: 300,
     time: '15 min',
     color: 'text-gray-500',
-    bg: 'bg-gray-50'
+    bg: 'bg-gray-50',
+    mode: 'particle'
   },
   {
     id: 'stoichiometry',
@@ -270,7 +285,8 @@ const SIMULATORS = [
     xp: 350,
     time: '18 min',
     color: 'text-indigo-500',
-    bg: 'bg-indigo-50'
+    bg: 'bg-indigo-50',
+    mode: 'equation'
   },
   {
     id: 'acid-base',
@@ -282,7 +298,8 @@ const SIMULATORS = [
     xp: 300,
     time: '15 min',
     color: 'text-red-500',
-    bg: 'bg-red-50'
+    bg: 'bg-red-50',
+    mode: 'titration'
   },
   {
     id: 'organic-nomenclature',
@@ -294,7 +311,8 @@ const SIMULATORS = [
     xp: 300,
     time: '15 min',
     color: 'text-teal-500',
-    bg: 'bg-teal-50'
+    bg: 'bg-teal-50',
+    mode: 'builder'
   },
   {
     id: 'hess-law',
@@ -306,7 +324,8 @@ const SIMULATORS = [
     xp: 350,
     time: '20 min',
     color: 'text-blue-500',
-    bg: 'bg-blue-50'
+    bg: 'bg-blue-50',
+    mode: 'equation'
   },
   {
     id: 'equilibrium',
@@ -330,7 +349,8 @@ const SIMULATORS = [
     xp: 300,
     time: '15 min',
     color: 'text-sky-500',
-    bg: 'bg-sky-50'
+    bg: 'bg-sky-50',
+    mode: 'explorer'
   },
   {
     id: 'electrochemistry',
@@ -342,7 +362,8 @@ const SIMULATORS = [
     xp: 500,
     time: '25 min',
     color: 'text-yellow-600',
-    bg: 'bg-yellow-50'
+    bg: 'bg-yellow-50',
+    mode: 'explorer'
   },
   {
     id: 'kinetics-advanced',
@@ -354,7 +375,8 @@ const SIMULATORS = [
     xp: 500,
     time: '25 min',
     color: 'text-rose-600',
-    bg: 'bg-rose-50'
+    bg: 'bg-rose-50',
+    mode: 'explorer'
   },
   {
     id: 'quantum',
@@ -366,7 +388,8 @@ const SIMULATORS = [
     xp: 450,
     time: '20 min',
     color: 'text-violet-600',
-    bg: 'bg-violet-50'
+    bg: 'bg-violet-50',
+    mode: 'explorer'
   },
   {
     id: 'spectroscopy',
@@ -378,7 +401,8 @@ const SIMULATORS = [
     xp: 550,
     time: '30 min',
     color: 'text-purple-500',
-    bg: 'bg-purple-50'
+    bg: 'bg-purple-50',
+    mode: 'explorer'
   },
   {
     id: 'chemical-cycles',
@@ -390,7 +414,8 @@ const SIMULATORS = [
     xp: 550,
     time: '30 min',
     color: 'text-blue-600',
-    bg: 'bg-blue-50'
+    bg: 'bg-blue-50',
+    mode: 'explorer'
   },
   {
     id: 'crystallography',
@@ -402,7 +427,8 @@ const SIMULATORS = [
     xp: 450,
     time: '20 min',
     color: 'text-indigo-500',
-    bg: 'bg-indigo-50'
+    bg: 'bg-indigo-50',
+    mode: 'explorer'
   },
   {
     id: 'polymer',
@@ -414,7 +440,8 @@ const SIMULATORS = [
     xp: 500,
     time: '25 min',
     color: 'text-pink-600',
-    bg: 'bg-pink-50'
+    bg: 'bg-pink-50',
+    mode: 'builder'
   },
   {
     id: 'nuclear',
@@ -426,7 +453,8 @@ const SIMULATORS = [
     xp: 600,
     time: '30 min',
     color: 'text-orange-600',
-    bg: 'bg-orange-50'
+    bg: 'bg-orange-50',
+    mode: 'explorer'
   },
   {
     id: 'biochemistry',
@@ -438,7 +466,8 @@ const SIMULATORS = [
     xp: 550,
     time: '30 min',
     color: 'text-emerald-600',
-    bg: 'bg-emerald-50'
+    bg: 'bg-emerald-50',
+    mode: 'explorer'
   },
   {
     id: 'environmental',
@@ -450,7 +479,8 @@ const SIMULATORS = [
     xp: 500,
     time: '25 min',
     color: 'text-green-600',
-    bg: 'bg-green-50'
+    bg: 'bg-green-50',
+    mode: 'explorer'
   }
 ];
 
