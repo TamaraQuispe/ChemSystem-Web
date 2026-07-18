@@ -35,4 +35,16 @@ const markAllRead = async (req, res, next) => {
   }
 };
 
-module.exports = { listNotifications, markAsRead, markAllRead };
+const createNotification = async (req, res, next) => {
+  try {
+    const notification = await Notification.create({
+      user_id: req.user.id,
+      title: req.body.title || 'Notificación',
+      message: req.body.message || '',
+      type: req.body.type || 'info',
+    });
+    res.status(201).json({ success: true, data: notification });
+  } catch (err) { next(err); }
+};
+
+module.exports = { listNotifications, markAsRead, markAllRead, createNotification };

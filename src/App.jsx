@@ -14,11 +14,13 @@ import Community from './pages/community/Community';
 import Settings from './pages/settings/Settings';
 import AchievementsPage from './pages/achievements/AchievementsPage';
 import TeacherLayout from './layouts/TeacherLayout';
-import TeacherDashboard from './pages/teacher/TeacherDashboard';
-import TeacherGrades from './pages/teacher/TeacherGrades';
-import TeacherMonitoring from './pages/teacher/TeacherMonitoring';
-import TeacherPredictive from './pages/teacher/TeacherPredictive';
-import TeacherCommunity from './pages/teacher/TeacherCommunity';
+const TeacherDashboard = lazy(() => import('./pages/teacher/TeacherDashboard'));
+const TeacherGrades = lazy(() => import('./pages/teacher/TeacherGrades'));
+const TeacherMonitoring = lazy(() => import('./pages/teacher/TeacherMonitoring'));
+const TeacherPredictive = lazy(() => import('./pages/teacher/TeacherPredictive'));
+const TeacherCommunity = lazy(() => import('./pages/teacher/TeacherCommunity'));
+const NewPracticePage = lazy(() => import('./pages/teacher/NewPracticePage'));
+const ClassroomDetail = lazy(() => import('./pages/teacher/ClassroomDetail'));
 import ParentLayout from './layouts/ParentLayout';
 import ParentRoute from './components/parent/ParentRoute';
 import ParentDashboard from './pages/parent/ParentDashboard';
@@ -114,13 +116,15 @@ function App() {
 
         {/* Teacher Routes (Role-protected) */}
         <Route path="/teacher" element={isAuthenticated ? <TeacherRoute><TeacherLayout /></TeacherRoute> : <Navigate to="/login" />}>
-          <Route index element={<TeacherDashboard />} />
-          <Route path="dashboard" element={<TeacherDashboard />} />
-          <Route path="grades" element={<TeacherGrades />} />
-          <Route path="monitoring" element={<TeacherMonitoring />} />
-          <Route path="predictive" element={<TeacherPredictive />} />
-          <Route path="community" element={<TeacherCommunity />} />
-          <Route path="settings" element={<Settings />} />
+          <Route index element={<Suspense fallback={<LoadingFallback />}><TeacherDashboard /></Suspense>} />
+          <Route path="dashboard" element={<Suspense fallback={<LoadingFallback />}><TeacherDashboard /></Suspense>} />
+          <Route path="grades" element={<Suspense fallback={<LoadingFallback />}><TeacherGrades /></Suspense>} />
+          <Route path="monitoring" element={<Suspense fallback={<LoadingFallback />}><TeacherMonitoring /></Suspense>} />
+          <Route path="predictive" element={<Suspense fallback={<LoadingFallback />}><TeacherPredictive /></Suspense>} />
+          <Route path="community" element={<Suspense fallback={<LoadingFallback />}><TeacherCommunity /></Suspense>} />
+          <Route path="new-practice" element={<Suspense fallback={<LoadingFallback />}><NewPracticePage /></Suspense>} />
+          <Route path="classroom/:id" element={<Suspense fallback={<LoadingFallback />}><ClassroomDetail /></Suspense>} />
+          <Route path="settings" element={<Suspense fallback={<LoadingFallback />}><Settings /></Suspense>} />
         </Route>
 
         {/* Parent Routes (Role-protected) */}

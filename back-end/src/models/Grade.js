@@ -10,6 +10,8 @@ module.exports = (sequelize) => {
     weight: { type: DataTypes.DECIMAL(5,2), defaultValue: 1 },
     topic: { type: DataTypes.STRING(200) },
     date: { type: DataTypes.DATEONLY, defaultValue: DataTypes.NOW },
+    is_published: { type: DataTypes.BOOLEAN, defaultValue: false },
+    published_at: DataTypes.DATE,
   }, {
     tableName: 'grades',
     timestamps: true,

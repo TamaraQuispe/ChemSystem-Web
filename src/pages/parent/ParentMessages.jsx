@@ -189,26 +189,49 @@ const ParentMessages = () => {
                         <p className="text-xs font-semibold text-text-secondary">No hay mensajes aún. Escribe algo para iniciar la conversación.</p>
                       </div>
                     ) : (
-                      messages.map((msg) => (
-                        <div key={msg.id} className={cn("flex", msg.from === 'parent' ? "justify-end" : "justify-start")}>
-                          <div className={cn(
-                            "max-w-[85%] sm:max-w-[75%] rounded-2xl px-4 py-3",
-                            msg.from === 'parent'
-                              ? "bg-primary text-white rounded-br-md"
-                              : "bg-gray-50 text-text-main rounded-bl-md"
-                          )}>
-                            <p className="text-xs font-semibold leading-relaxed">{msg.text}</p>
-                            <div className={cn("flex items-center gap-1 mt-1", msg.from === 'parent' ? "justify-end" : "justify-start")}>
-                              <span className={cn("text-[9px] font-medium", msg.from === 'parent' ? "text-white/70" : "text-gray-400")}>
-                                {msg.time}
-                              </span>
-                              {msg.from === 'parent' && (
-                                <CheckCheck size={12} className={msg.pending ? "text-white/40" : "text-white/70"} />
-                              )}
-                            </div>
+                      <>
+                        {/* System notification */}
+                        <div className="flex justify-center">
+                          <div className="bg-[#cbe6ff]/20 px-4 py-2 rounded-full flex items-center gap-2 border border-[#cbe6ff]/10">
+                            <span className="text-[10px]">💬</span>
+                            <p className="text-[10px] font-semibold text-[#004b71]">Colaboración: Docente · Padre · Estudiante</p>
                           </div>
                         </div>
-                      ))
+                        {messages.map((msg) => {
+                          const isParent = msg.from === 'parent';
+                          const isTeacher = msg.from === 'teacher';
+                          const isStudent = msg.from === 'student';
+                          return (
+                            <div key={msg.id} className={cn("flex items-start gap-3 max-w-[85%] sm:max-w-[75%]", isParent ? "ml-auto flex-row-reverse" : "")}>
+                              <div className={cn("w-7 h-7 rounded-full shrink-0 flex items-center justify-center text-[8px] font-bold mt-1",
+                                isTeacher ? 'bg-[#cbe6ff] text-[#004b71]' : isParent ? 'bg-[#86f8c8] text-[#007352]' : 'bg-[#f8d8ff] text-[#6c228c]'
+                              )}>
+                                {isTeacher ? 'D' : isParent ? 'P' : 'E'}
+                              </div>
+                              <div className={cn("space-y-1", isParent ? "text-right" : "")}>
+                                <div className="flex items-center gap-2">
+                                  <span className={cn("text-[9px] font-bold uppercase",
+                                    isTeacher ? 'text-[#004b71]' : isParent ? 'text-[#006c4d]' : 'text-[#6c228c]'
+                                  )}>
+                                    {isTeacher ? 'Docente' : isParent ? 'Tú' : 'Estudiante'}
+                                  </span>
+                                  <span className="text-[8px] text-[#40484f]">{msg.time}</span>
+                                </div>
+                                <div className={cn("rounded-2xl px-4 py-3 text-sm leading-relaxed",
+                                  isParent ? 'bg-[#004b71] text-white rounded-br-md' :
+                                  isTeacher ? 'bg-[#e8e8e9] text-[#1a1c1d] rounded-bl-md' :
+                                  'bg-[#f8d8ff] text-[#1a1c1d] rounded-bl-md'
+                                )}>
+                                  <p className="text-xs font-semibold leading-relaxed">{msg.text}</p>
+                                  <div className={cn("flex items-center gap-1 mt-1", isParent ? "justify-end" : "justify-start")}>
+                                    {isParent && <CheckCheck size={12} className={msg.pending ? "text-white/40" : "text-white/70"} />}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </>
                     )}
                     <div ref={messagesEndRef} />
                   </div>

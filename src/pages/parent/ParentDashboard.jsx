@@ -61,6 +61,7 @@ const ParentDashboard = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [detailSubject, setDetailSubject] = useState(null);
   const selectedChild = useParentStore((state) => state.selectedChild);
 
   useEffect(() => {
@@ -220,7 +221,10 @@ const ParentDashboard = () => {
           <Card className="p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-black text-primary-dark">Rendimiento por Materia</h2>
-              <button className="flex items-center gap-1 text-xs font-bold text-primary hover:text-primary-dark transition-colors">
+              <button onClick={() => {
+                const subjectsWithData = subjectProgress.filter(s => s.progress > 0);
+                if (subjectsWithData.length > 0) setDetailSubject(subjectsWithData[0]);
+              }} className="flex items-center gap-1 text-xs font-bold text-primary hover:text-primary-dark transition-colors">
                 Ver detalle <ChevronRight size={14} />
               </button>
             </div>
@@ -341,12 +345,66 @@ const ParentDashboard = () => {
                 </div>
               ))}
             </div>
-            <button className="w-full mt-4 py-3 bg-primary/5 text-primary rounded-2xl font-bold text-xs hover:bg-primary/10 transition-all active:scale-[0.98]">
-              Ver todas las recomendaciones
+            <button onClick={() => window.location.href = '/parent/recommendations'}
+              className="w-full mt-4 py-3 bg-primary/5 text-primary rounded-2xl font-bold text-xs hover:bg-primary/10 transition-all active:scale-[0.98]">
+              Ver todas las recomendaciones →
             </button>
           </Card>
         </motion.div>
       </div>
+
+      {/* Subject Detail Modal */}
+      {detailSubject && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setDetailSubject(null)}>
+          <div className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-start justify-between mb-6">
+              <div>
+                <h3 className="text-xl font-black text-primary-dark">{detailSubject.subject}</h3>
+                <p className="text-sm text-text-secondary mt-1">Rendimiento detallado</p>
+              </div>
+              <button onClick={() => setDetailSubject(null)} className="p-1.5 hover:bg-gray-100 rounded-lg transition-all text-lg">✕</button>
+            </div>
+            <div className="space-y-5">
+              <div className="text-center p-6 bg-gray-50 rounded-2xl">
+                <p className="text-5xl font-black text-primary-dark">{detailSubject.progress}%</p>
+                <p className="text-xs font-bold text-text-secondary mt-2">Progreso actual</p>
+              </div>
+              <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                <motion.div initial={{ width: 0 }} animate={{ width: `${detailSubject.progress}%` }}
+                  className={cn("h-full rounded-full",
+                    detailSubject.progress >= 80 ? 'bg-emerald-400' : detailSubject.progress >= 60 ? 'bg-blue-400' : 'bg-amber-400'
+                  )} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-emerald-50 rounded-2xl text-center">
+                  <p className="text-xs font-bold text-text-secondary">Estado</p>
+                  <p className={cn("text-sm font-black mt-1",
+                    detailSubject.status === 'excelente' ? 'text-emerald-500' : detailSubject.status === 'bueno' ? 'text-blue-500' : 'text-amber-500'
+                  )}>
+                    {detailSubject.status === 'excelente' ? 'Excelente' : detailSubject.status === 'bueno' ? 'Bueno' : 'Atención'}
+                  </p>
+                </div>
+                <div className="p-4 bg-blue-50 rounded-2xl text-center">
+                  <p className="text-xs font-bold text-text-secondary">Rendimiento</p>
+                  <p className="text-sm font-black text-blue-500 mt-1">{detailSubject.progress >= 80 ? 'Sobre la media' : detailSubject.progress >= 60 ? 'En desarrollo' : 'Requiere refuerzo'}</p>
+                </div>
+              </div>
+              <div className="p-4 bg-amber-50 rounded-2xl flex items-start gap-3">
+                <Lightbulb size={16} className="text-amber-500 shrink-0 mt-0.5" />
+                <p className="text-xs font-semibold text-text-secondary">
+                  {detailSubject.progress >= 80 ? 'Tu hijo domina esta materia. Sigue motivándolo con nuevos retos.' :
+                   detailSubject.progress >= 60 ? 'Tu hijo va bien, pero puede mejorar. Revisa las recomendaciones para reforzar.' :
+                   'Esta materia necesita atención. Te sugerimos revisar las recomendaciones de apoyo.'}
+                </p>
+              </div>
+              <button onClick={() => { setDetailSubject(null); window.location.href = '/parent/recommendations'; }}
+                className="w-full py-3 bg-primary-dark text-white rounded-2xl font-bold text-sm hover:bg-primary transition-all">
+                Ver recomendaciones →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

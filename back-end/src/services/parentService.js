@@ -198,7 +198,7 @@ async function getConversationMessages(conversationId) {
   });
   return messages.map(m => ({
     id: m.id,
-    from: m.sender.role === 'parent' ? 'parent' : 'teacher',
+    from: m.sender.role === 'parent' ? 'parent' : m.sender.role === 'student' ? 'student' : 'teacher',
     text: m.content,
     time: formatTimeAgo(m.created_at),
   }));
@@ -217,6 +217,15 @@ async function sendMessage(parentId, conversationId, content) {
 
   conversation.last_message_at = new Date();
   await conversation.save();
+
+  try {
+    await Notification.create({
+      user_id: conversation.teacher_id,
+      title: 'Nuevo mensaje de padre de familia',
+      message: content.substring(0, 120) + (content.length > 120 ? '...' : ''),
+      type: 'info',
+    });
+  } catch {}
 
   return { id: message.id, content, from: 'parent', time: 'Ahora' };
 }

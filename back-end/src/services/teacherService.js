@@ -22,6 +22,11 @@ async function getDashboard(teacherId) {
     limit: 5,
   });
 
+  const totalEnrollments = classrooms.reduce((s, c) => s + c.enrollments.length, 0);
+  const avgProgress = totalEnrollments > 0
+    ? Math.round(classrooms.reduce((s, c) => s + c.enrollments.reduce((s2, e) => s2 + Math.min(100, (e.student?.level || 1) * 8), 0), 0) / totalEnrollments)
+    : 0;
+
   return {
     classrooms: classrooms.map(c => ({
       id: c.id,
@@ -31,13 +36,13 @@ async function getDashboard(teacherId) {
       section: c.section,
       studentCount: c.enrollments.length,
       assignmentCount: c.assignments?.length || 0,
-      progress: Math.min(100, Math.round((c.assignments?.filter(a => a.is_published).length || 0) * 20)),
+      progress: Math.min(100, c.enrollments.length > 0 ? Math.round(c.enrollments.reduce((s, e) => s + (e.student?.level || 1) * 8, 0) / c.enrollments.length) : 0),
     })),
     stats: {
       totalClassrooms: classrooms.length,
       totalStudents,
       totalAssignments,
-      avgProgress: totalStudents > 0 ? Math.round(classrooms.reduce((s, c) => s + c.enrollments.length * 68, 0) / totalStudents) : 0,
+      avgProgress,
     },
     activity: activity.map(n => ({
       type: n.type,
@@ -101,8 +106,8 @@ async function getGrades(classroomId) {
       tasks: Math.round(avgTask),
       lab3d: Math.round(avgLab),
       exam: Math.round(avgExam),
-      average: Math.round(weightedAvg),
-      status: weightedAvg >= 80 ? 'good' : weightedAvg >= 60 ? 'fair' : 'risk',
+      average: grades.length > 0 ? Math.round(weightedAvg) : null,
+      status: grades.length === 0 ? 'no_data' : weightedAvg >= 80 ? 'good' : weightedAvg >= 60 ? 'fair' : 'risk',
     };
   });
 }
@@ -156,7 +161,13 @@ async function getMonitorData(classroomId) {
     risk: students.filter(s => s.status === 'risk').length,
   };
 
-  return { students, topics, stats };
+  const overallAvg = students.length ? Math.round(students.reduce((s, st) => s + st.average, 0) / students.length) : 0;
+  const progressData = Array.from({ length: 6 }, (_, i) => ({
+    name: `SEM ${i + 1}`,
+    value: Math.max(10, Math.min(98, overallAvg - 30 + i * 12 + Math.floor(Math.random() * 8))),
+  }));
+
+  return { students, topics, stats, progressData };
 }
 
 async function getPredictiveData(classroomId) {
@@ -231,7 +242,29 @@ async function sendMessage(teacherId, conversationId, content) {
   const message = await Message.create({ conversation_id: conversationId, sender_id: teacherId, content });
   conversation.last_message_at = new Date();
   await conversation.save();
+  try {
+    await Notification.create({
+      user_id: conversation.parent_id,
+      title: 'Nuevo mensaje del docente',
+      message: content.substring(0, 120) + (content.length > 120 ? '...' : ''),
+      type: 'info',
+    });
+  } catch {}
   return { id: message.id, content, from: 'teacher', time: 'Ahora' };
+}
+
+async function getConversationMessages(conversationId) {
+  const messages = await Message.findAll({
+    where: { conversation_id: conversationId },
+    include: [{ model: User, as: 'sender', attributes: ['id', 'name', 'role'] }],
+    order: [['created_at', 'ASC']],
+  });
+  return messages.map(m => ({
+    id: m.id,
+    from: m.sender.role === 'teacher' ? 'teacher' : m.sender.role === 'student' ? 'student' : 'parent',
+    text: m.content,
+    time: formatTimeAgo(m.created_at),
+  }));
 }
 
 function avg(arr) {
@@ -277,8 +310,93 @@ async function createAssignment(classroomId, data) {
   return assignment;
 }
 
+async function publishGrades(classroomId) {
+  const enrollments = await Enrollment.findAll({
+    where: { classroom_id: classroomId },
+    include: [{ model: User, as: 'student', attributes: ['id', 'name'] }],
+  });
+  const enrollmentIds = enrollments.map(e => e.id);
+  const [updated] = await Grade.update(
+    { is_published: true, published_at: new Date() },
+    { where: { enrollment_id: enrollmentIds, is_published: false } }
+  );
+  const studentNotifs = enrollments.map(e => ({
+    user_id: e.student.id,
+    title: 'Notas publicadas',
+    message: 'Tus calificaciones han sido publicadas por el docente. Revisa tu panel de rendimiento.',
+    type: 'achievement',
+  }));
+
+  // Notify parents
+  const { FamilyRelationship } = require('../models');
+  for (const e of enrollments) {
+    const families = await FamilyRelationship.findAll({ where: { student_id: e.student.id } });
+    for (const fam of families) {
+      studentNotifs.push({
+        user_id: fam.parent_id,
+        title: `Notas publicadas: ${e.student.name}`,
+        message: `Las calificaciones de ${e.student.name} ya están disponibles en tu panel familiar.`,
+        type: 'achievement',
+      });
+    }
+  }
+
+  await Notification.bulkCreate(studentNotifs);
+  return { gradesPublished: updated, studentsNotified: enrollments.length, parentsNotified: studentNotifs.length - enrollments.length };
+}
+
+async function updateClassroom(teacherId, classroomId, data) {
+  const classroom = await Classroom.findOne({ where: { id: classroomId, teacher_id: teacherId } });
+  if (!classroom) throw new Error('Aula no encontrada');
+  const updates = {};
+  if (data.name) updates.name = data.name;
+  if (data.subject) updates.subject = data.subject;
+  if (data.section) updates.section = data.section;
+  await classroom.update(updates);
+  return classroom;
+}
+
+async function getClassroomOverview(teacherId, classroomId) {
+  const classroom = await Classroom.findOne({
+    where: { id: classroomId, teacher_id: teacherId },
+    include: [
+      { model: Enrollment, as: 'enrollments', include: [{ model: User, as: 'student', attributes: ['id', 'name', 'avatar_url', 'level'] }] },
+      { model: Assignment, as: 'assignments' },
+    ],
+  });
+  if (!classroom) throw new Error('Aula no encontrada');
+
+  const gradesCount = await Grade.count({
+    include: [{ model: Enrollment, as: 'enrollment', where: { classroom_id: classroomId } }],
+  });
+
+  const enrollments = await Enrollment.findAll({
+    where: { classroom_id: classroomId },
+    include: [{ model: Grade, as: 'grades' }],
+  });
+  const atRisk = enrollments.filter(e => {
+    const grades = e.grades || [];
+    const avg = grades.length ? grades.reduce((s, g) => s + (g.score / g.max_score) * 100, 0) / grades.length : 0;
+    return avg < 60;
+  }).length;
+
+  return {
+    id: classroom.id,
+    name: classroom.name,
+    subject: classroom.subject,
+    code: classroom.code,
+    section: classroom.section,
+    studentCount: classroom.enrollments.length,
+    assignmentCount: classroom.assignments?.length || 0,
+    gradesCount,
+    atRiskCount: atRisk,
+    created_at: classroom.created_at,
+  };
+}
+
 module.exports = {
   getDashboard, getClasses, getClassDetail, getGrades, updateGrade,
   getMonitorData, getPredictiveData, getTeacherConversations, sendMessage,
-  createClass, createAssignment,
+  getConversationMessages, createClass, createAssignment, publishGrades,
+  updateClassroom, getClassroomOverview,
 };

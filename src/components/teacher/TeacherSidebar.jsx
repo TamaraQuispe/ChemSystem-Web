@@ -94,7 +94,7 @@ const TeacherSidebar = () => {
       {/* New Practice Button */}
       {expanded && (
         <div className="px-4 py-3 shrink-0">
-          <Button className="w-full h-11 bg-primary-dark text-white rounded-2xl shadow-xl shadow-primary/20 gap-3 font-bold active:scale-95 transition-all text-sm">
+          <Button onClick={() => window.location.href = '/teacher/new-practice'} className="w-full h-11 bg-primary-dark text-white rounded-2xl shadow-xl shadow-primary/20 gap-3 font-bold active:scale-95 transition-all text-sm">
             <Plus size={20} /> Nueva Práctica
           </Button>
         </div>
@@ -122,6 +122,7 @@ const TeacherSidebar = () => {
         </button>
         
         <button
+          onClick={() => window.open('https://chemsystem.edu/ayuda', '_blank')}
           className={cn(
             "flex items-center rounded-xl text-text-secondary hover:bg-gray-50 transition-all",
             expanded ? "gap-4 px-3 py-2 w-full" : "gap-0 px-0 py-3 justify-center mx-auto w-12"

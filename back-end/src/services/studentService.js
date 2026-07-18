@@ -112,6 +112,37 @@ async function completeQuiz(userId, data) {
     await User.increment('xp', { by: data.xp_earned, where: { id: userId } });
   }
 
+  try {
+    const { Enrollment, Classroom, FamilyRelationship, sequelize } = require('../models');
+    const enrollments = await Enrollment.findAll({
+      where: { student_id: userId },
+      include: [{ model: Classroom, as: 'classroom', attributes: ['teacher_id', 'name'] }],
+    });
+    const notified = new Set();
+    for (const enr of enrollments) {
+      if (enr.classroom?.teacher_id && !notified.has(enr.classroom.teacher_id)) {
+        notified.add(enr.classroom.teacher_id);
+        await Notification.create({
+          user_id: enr.classroom.teacher_id,
+          title: `Práctica completada: ${Math.round((data.score / (data.max_score || 100)) * 100)}%`,
+          message: `${data.answers?.length || 0} respuestas enviadas en ${enr.classroom.name || 'curso'}`,
+          type: 'achievement',
+        });
+      }
+    }
+    // Notify parents
+    const families = await FamilyRelationship.findAll({ where: { student_id: userId } });
+    const user_ = await User.findByPk(userId, { attributes: ['name'] });
+    for (const fam of families) {
+      await Notification.create({
+        user_id: fam.parent_id,
+        title: `${user_?.name || 'Tu hijo'} completó una práctica`,
+        message: `Obtuvo ${Math.round((data.score / (data.max_score || 100)) * 100)}% en su última evaluación`,
+        type: 'achievement',
+      });
+    }
+  } catch {}
+
   return result;
 }
 

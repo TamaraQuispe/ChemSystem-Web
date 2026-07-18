@@ -79,8 +79,37 @@ const createAssignment = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+const getConversationMessages = async (req, res, next) => {
+  try {
+    const messages = await teacherService.getConversationMessages(req.params.conversationId);
+    res.json({ success: true, data: { messages } });
+  } catch (err) { next(err); }
+};
+
+const publishGrades = async (req, res, next) => {
+  try {
+    const result = await teacherService.publishGrades(req.params.classId);
+    res.json({ success: true, data: result });
+  } catch (err) { next(err); }
+};
+
+const updateClassroom = async (req, res, next) => {
+  try {
+    const classroom = await teacherService.updateClassroom(req.user.id, req.params.id, req.body);
+    res.json({ success: true, data: classroom });
+  } catch (err) { next(err); }
+};
+
+const getClassroomOverview = async (req, res, next) => {
+  try {
+    const data = await teacherService.getClassroomOverview(req.user.id, req.params.id);
+    res.json({ success: true, data });
+  } catch (err) { next(err); }
+};
+
 module.exports = {
   getDashboard, getClasses, getClassDetail, getGrades, updateGrade,
   getMonitorData, getPredictiveData, getConversations, sendMessage,
-  createClass, createAssignment,
+  getConversationMessages, createClass, createAssignment, publishGrades,
+  updateClassroom, getClassroomOverview,
 };

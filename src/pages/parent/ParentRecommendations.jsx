@@ -194,8 +194,44 @@ const ParentRecommendations = () => {
               <p className="text-xs font-semibold text-white/70">Descarga el informe detallado con todas las recomendaciones personalizadas</p>
             </div>
           </div>
-          <button className="px-6 py-3 bg-white text-primary-dark rounded-2xl font-bold text-sm hover:bg-white/90 transition-all active:scale-95 shrink-0">
-            Descargar PDF
+          <button onClick={() => {
+            const doc = `
+            <html><head><meta charset="utf-8"><title>Reporte de Recomendaciones</title>
+            <style>
+              body { font-family: 'Inter', sans-serif; padding: 40px; color: #1a1c1d; }
+              h1 { font-size: 24px; color: #004b71; margin-bottom: 8px; }
+              h2 { font-size: 18px; color: #004b71; margin-top: 30px; margin-bottom: 12px; }
+              .insight { background: #f3f3f4; padding: 16px; border-radius: 16px; margin-bottom: 12px; }
+              .rec { border-left: 4px solid #004b71; padding: 12px 16px; margin-bottom: 16px; background: #f9f9fa; }
+              .rec-warning { border-left-color: #f59e0b; }
+              .badge { background: #cbe6ff; color: #004b71; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: bold; display: inline-block; margin-bottom: 6px; }
+              p { font-size: 14px; line-height: 1.6; color: #40484f; }
+              .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e2e3; font-size: 12px; color: #707880; text-align: center; }
+              table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+              td { padding: 8px 12px; border-bottom: 1px solid #e2e2e3; font-size: 13px; }
+              td:first-child { font-weight: 600; color: #1a1c1d; }
+              td:last-child { color: #40484f; }
+            </style></head><body>
+              <h1>Reporte de Recomendaciones</h1>
+              <p style="color:#707880;margin-bottom:30px;">Generado el ${new Date().toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+              <h2>📊 Análisis General</h2>
+              <div class="insight"><table>
+                ${insights.map(i => `<tr><td>${i.label}</td><td><strong>${i.value}</strong> · ${i.detail}</td></tr>`).join('')}
+              </table></div>
+              <h2>💡 Recomendaciones</h2>
+              ${filteredRecs.map(r => {
+                const priorityLabel = r.priorityLabel === 'high' ? 'Prioridad Alta' : r.priorityLabel === 'medium' ? 'Prioridad Media' : 'Prioridad Baja';
+                const icon = r.priorityLabel === 'high' ? '🔴' : r.priorityLabel === 'medium' ? '🟡' : '🔵';
+                return `<div class="rec"><div class="badge">${icon} ${priorityLabel}</div><p style="font-weight:600;margin-bottom:4px;">${r.title || 'Recomendación'}</p><p>${r.message}</p></div>`;
+              }).join('')}
+              <div class="footer"><p>ChemSystem · Plataforma Educativa de Química · Este reporte fue generado automáticamente basado en el rendimiento académico del estudiante.</p></div>
+            </body></html>`;
+            const blob = new Blob([doc], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = `recomendaciones-${new Date().toISOString().slice(0, 10)}.html`; a.click();
+            URL.revokeObjectURL(url);
+          }} className="px-6 py-3 bg-white text-primary-dark rounded-2xl font-bold text-sm hover:bg-white/90 transition-all active:scale-95 shrink-0">
+            Descargar Reporte
           </button>
         </div>
       </Card>
