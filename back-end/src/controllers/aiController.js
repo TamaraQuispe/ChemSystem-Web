@@ -10,13 +10,28 @@ const getRecommendations = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+const MAX_MESSAGE_LENGTH = 2000;
+const MAX_HISTORY = 20;
+
 const chat = async (req, res, next) => {
   try {
     const messages = req.body?.messages || [];
     if (!messages.length) {
       return res.status(400).json({ success: false, message: 'Se requiere al menos un mensaje' });
     }
-    const result = await aiService.chat(messages);
+    const lastMsg = messages[messages.length - 1];
+    if (!lastMsg?.content || typeof lastMsg.content !== 'string') {
+      return res.status(400).json({ success: false, message: 'Mensaje inválido' });
+    }
+    if (lastMsg.content.length > MAX_MESSAGE_LENGTH) {
+      return res.status(400).json({ success: false, message: `El mensaje no puede exceder ${MAX_MESSAGE_LENGTH} caracteres` });
+    }
+    const limited = messages.slice(-MAX_HISTORY);
+    const sanitized = limited.map(m => ({
+      role: m.role === 'system' ? 'system' : m.role === 'assistant' ? 'assistant' : 'user',
+      content: String(m.content).slice(0, MAX_MESSAGE_LENGTH),
+    }));
+    const result = await aiService.chat(sanitized);
     res.json({ success: true, data: result });
   } catch (err) { next(err); }
 };

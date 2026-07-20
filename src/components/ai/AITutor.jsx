@@ -15,16 +15,23 @@ const AITutor = () => {
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
+  const MAX_LENGTH = 2000;
+
   const handleSend = async () => {
     if (!input.trim() || loading) return;
+    if (input.length > MAX_LENGTH) {
+      setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ El mensaje no puede exceder ${MAX_LENGTH} caracteres.` }]);
+      return;
+    }
     const userMsg = { role: 'user', content: input };
     const updatedMessages = [...messages, userMsg];
     setMessages(updatedMessages);
     setInput('');
     setLoading(true);
     try {
-      const res = await api.post('/ai/chat', { messages: updatedMessages.map(m => ({ role: m.role, content: m.content })) });
-      setMessages(prev => [...prev, { role: 'assistant', content: res.data?.reply || 'Error: respuesta vacía del servidor.' }]);
+      const history = updatedMessages.slice(-20).map(m => ({ role: m.role, content: m.content }));
+      const res = await api.post('/ai/chat', { messages: history });
+      setMessages(prev => [...prev, { role: 'assistant', content: res.data?.reply || 'Error: respuesta vacía.' }]);
     } catch (err) {
       setMessages(prev => [...prev, { role: 'assistant', content: '⚠️ Error: ' + (err.message || 'conexión') }]);
     }

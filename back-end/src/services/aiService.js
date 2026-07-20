@@ -8,13 +8,16 @@ const SYSTEM_PROMPT = {
   content: `Eres un asistente educativo de ChemSystem, una plataforma de química. Ayudas a estudiantes con sus consultas sobre cursos, simuladores, laboratorios y ejercicios. Respondes en español de forma clara, breve y amigable. Si te saludan, solo saluda cordialmente. Si preguntan sobre química, explica con ejemplos prácticos. No inventes información que no conozcas.`,
 };
 
+const REQUEST_TIMEOUT = 30000;
+
 function callOpenRouter(messages) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const payload = JSON.stringify({ model: MODEL, messages, temperature: 0.7 });
     const opts = {
       hostname: 'openrouter.ai',
       path: '/api/v1/chat/completions',
       method: 'POST',
+      timeout: REQUEST_TIMEOUT,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${API_KEY}`,
@@ -23,43 +26,29 @@ function callOpenRouter(messages) {
       },
     };
 
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`[AI] Sending ${messages.length} messages to ${MODEL}`);
-      const start = Date.now();
-      const req = https.request(opts, res => {
-        let body = '';
-        res.on('data', c => body += c);
-        res.on('end', () => {
-          console.log(`[AI] Response in ${Date.now() - start}ms (HTTP ${res.statusCode})`);
-          try {
-            const parsed = JSON.parse(body);
-            if (parsed.error) console.error('[AI] OpenRouter error:', parsed.error.message);
-            resolve(parsed);
-          } catch {
-            console.error('[AI] Failed to parse response:', body.slice(0, 200));
-            resolve({ error: { message: 'Respuesta inválida del servidor' } });
+    const start = Date.now();
+    const req = https.request(opts, res => {
+      let body = '';
+      res.on('data', c => body += c);
+      res.on('end', () => {
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[AI] ${res.statusCode} in ${Date.now() - start}ms (${messages.length} msgs)`);
+        }
+        try {
+          const parsed = JSON.parse(body);
+          if (parsed.error && process.env.NODE_ENV === 'development') {
+            console.error('[AI] OpenRouter error:', parsed.error.message);
           }
-        });
+          resolve(parsed);
+        } catch {
+          resolve({ error: { message: 'Respuesta inválida del servidor' } });
+        }
       });
-      req.on('error', e => {
-        console.error('[AI] Network error:', e.message);
-        reject(e);
-      });
-      req.write(payload);
-      req.end();
-    } else {
-      const req = https.request(opts, res => {
-        let body = '';
-        res.on('data', c => body += c);
-        res.on('end', () => {
-          try { resolve(JSON.parse(body)); }
-          catch { resolve({ error: { message: 'Respuesta inválida del servidor' } }); }
-        });
-      });
-      req.on('error', reject);
-      req.write(payload);
-      req.end();
-    }
+    });
+    req.on('error', e => resolve({ error: { message: 'Error de red: ' + e.message } }));
+    req.on('timeout', () => { req.destroy(); resolve({ error: { message: 'Tiempo de espera agotado (30s)' } }); });
+    req.write(payload);
+    req.end();
   });
 }
 
