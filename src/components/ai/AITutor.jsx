@@ -26,10 +26,13 @@ const AITutor = () => {
       const res = await api.post('/ai/chat', { messages: updatedMessages.map(m => ({ role: m.role, content: m.content })) });
       setMessages(prev => [...prev, { role: 'assistant', content: res.data?.reply || 'Error: respuesta vacía del servidor.' }]);
     } catch (err) {
-      const errorText = err.message || 'Error de conexión';
-      setMessages(prev => [...prev, { role: 'assistant', content: `⚠️ Error: ${errorText}` }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: '⚠️ Error: ' + (err.message || 'conexión') }]);
     }
     setLoading(false);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
   };
 
   return (
@@ -51,7 +54,7 @@ const AITutor = () => {
                   <Bot size={22} />
                   <div>
                     <p className="font-bold text-sm">Asistente ChemSystem</p>
-                    <p className="text-[10px] text-white/70">Llama 3.2 · OpenRouter</p>
+                    <p className="text-[10px] text-white/70">IA · OpenRouter</p>
                   </div>
                 </div>
                 <button onClick={() => setOpen(false)} className="p-1 hover:bg-white/20 rounded-lg transition-all"><X size={18} /></button>
@@ -84,7 +87,7 @@ const AITutor = () => {
               <div className="p-4 border-t border-gray-100 shrink-0">
                 <div className="flex items-center gap-2">
                   <input type="text" placeholder="Escribe tu consulta..." value={input}
-                    onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()}
+                    onChange={e => setInput(e.target.value)} onKeyDown={handleKeyDown}
                     className="flex-1 h-10 px-4 bg-gray-50 border-none rounded-2xl text-xs font-medium focus:ring-2 focus:ring-[#004b71]/20 outline-none" />
                   <button onClick={handleSend} disabled={!input.trim() || loading}
                     className="p-2.5 bg-[#004b71] text-white rounded-xl disabled:opacity-50 transition-all">

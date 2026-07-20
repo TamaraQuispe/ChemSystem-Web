@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '../components/dashboard/Sidebar';
 import Header from '../components/dashboard/Header';
-import AIAssistant from '../components/shared/AIAssistant';
 import AITutor from '../components/ai/AITutor';
 import AchievementToast from '../components/shared/AchievementToast';
 import { motion } from 'framer-motion';
@@ -38,7 +37,6 @@ const DashboardLayout = () => {
       </div>
       
       <AchievementToast />
-      <AIAssistant />
       <AITutor />
     </div>
   );
