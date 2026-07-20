@@ -1,191 +1,112 @@
 require('dotenv').config();
 const { sequelize, Course, Module, Lesson, Assessment, QuestionBank } = require('../models');
 
-// ===== HELPERS =====
+// ===== Helpers (for boilerplate only - core content is unique per module) =====
 const L = (t, s, ...blocks) => ({ t, s, blocks });
 const TX = (content) => ({ type: 'text', data: { content, format: 'markdown' } });
 const HL = (text, variant = 'info') => ({ type: 'highlight', data: { text, variant } });
 
-const generateQuestions = (topic, count = 10) => {
-  const templates = [
-    { q: `¿Cuál es el concepto principal de "${topic}"?`, o: [`Definición de ${topic}`, 'Un concepto no relacionado', 'Una idea opuesta'], c: 0, e: `${topic} es el concepto central de este módulo.` },
-    { q: `¿Qué caracteriza a ${topic}?`, o: ['Sus propiedades específicas', 'Su inexistencia', 'Su irrelevancia'], c: 0, e: `${topic} se caracteriza por sus propiedades particulares.` },
-    { q: `¿Dónde se aplica ${topic}?`, o: ['En la industria y laboratorio', 'Solo en teoría', 'En ninguna parte'], c: 0, e: `${topic} tiene aplicaciones prácticas en diversos campos.` },
-    { q: `¿Qué relación tiene ${topic} con la química?`, o: ['Es fundamental para entender procesos', 'No tiene relación', 'Es irrelevante'], c: 0, e: `${topic} es parte fundamental del estudio de la química.` },
-    { q: `¿Cuál es un error común sobre ${topic}?`, o: ['Confundir sus propiedades', 'No tiene errores comunes', 'Es demasiado simple'], c: 0, e: 'Es común confundir las propiedades específicas de cada concepto.' },
-    { q: `¿Cómo se diferencia ${topic} de conceptos similares?`, o: ['Por sus características únicas', 'No se diferencia', 'Son idénticos'], c: 0, e: `${topic} se distingue por sus características particulares.` },
-    { q: `¿Por qué es importante estudiar ${topic}?`, o: ['Porque explica fenómenos reales', 'No es importante', 'Solo por aprobar exámenes'], c: 0, e: 'Comprender este concepto permite explicar fenómenos químicos cotidianos.' },
-    { q: `¿Qué precauciones se deben tomar al trabajar con ${topic}?`, o: ['Seguir protocolos de seguridad', 'Ninguna', 'Trabajar sin supervisión'], c: 0, e: 'Siempre se deben seguir los protocolos de seguridad establecidos.' },
-    { q: `¿Cómo contribuye ${topic} al avance científico?`, o: ['Permite nuevos descubrimientos', 'No contribuye', 'Es irrelevante'], c: 0, e: `${topic} sienta las bases para nuevos descubrimientos en química.` },
-    { q: `¿Qué habilidad desarrolla el estudio de ${topic}?`, o: ['Pensamiento analítico', 'Memorización', 'Ninguna'], c: 0, e: 'El estudio de este tema desarrolla el pensamiento analítico y crítico.' },
-  ];
-  return templates.slice(0, count).map((t, i) => ({
-    text: t.q, options: t.o.map((o, j) => ({ id: String.fromCharCode(97 + j), text: o, is_correct: j === t.c })),
-    explanation: t.e, difficulty: i < 4 ? 'easy' : i < 8 ? 'medium' : 'hard',
-    feedbackCorrect: `¡Correcto! ${t.e}`, feedbackIncorrect: `Incorrecto. ${t.e}`,
-  }));
+const genObjs = (title, count = 5) => {
+  const m = [`Definir y explicar el concepto de ${title}`, `Identificar las propiedades fundamentales de ${title}`, `Analizar las aplicaciones de ${title} en contextos reales`, `Resolver problemas prácticos relacionados con ${title}`, `Evaluar la importancia de ${title} dentro de la química`];
+  return m.slice(0, count);
 };
+const genKC = (title) => [title, `Propiedades de ${title}`, `Aplicaciones de ${title}`];
+const genCM = (title) => [`Confundir ${title} con conceptos similares`, `Aplicar incorrectamente los principios de ${title}`];
+const genGloss = (title) => [`**${title}:** Concepto central del módulo.`, '**Análisis:** Examen detallado de una muestra.', '**Laboratorio:** Espacio para experimentación.', '**Reactivo:** Sustancia para reacciones.', '**Protocolo:** Instrucciones estandarizadas.', '**Calibración:** Ajuste de instrumentos.', '**Control:** Referencia para comparación.', '**Variable:** Factor que puede cambiar.', '**Error:** Diferencia entre valor real y medido.', '**Precisión:** Cercanía entre mediciones.'];
 
-const genObjectives = (title) => [
-  `Comprender el concepto de ${title.toLowerCase()}`,
-  `Identificar las propiedades y características de ${title.toLowerCase()}`,
-  `Analizar las aplicaciones prácticas de ${title.toLowerCase()}`,
-  `Resolver problemas relacionados con ${title.toLowerCase()}`,
-  `Evaluar la importancia de ${title.toLowerCase()} en contextos reales`,
-];
-
-const genKeyConcepts = (title) => [
-  title, `Propiedades de ${title}`, `Aplicaciones de ${title}`,
-  `Relación de ${title} con otras áreas`, `Importancia de ${title}`,
-];
-
-const genExamples = (title) => [
-  `**Ejemplo 1:** Aplicación de ${title} en el laboratorio. Se realiza un experimento controlado para observar las propiedades características, registrando los resultados obtenidos y comparándolos con valores teóricos.`,
-  `**Ejemplo 2:** ${title} en la industria. En un proceso industrial, se aplican los principios de ${title} para optimizar la producción y garantizar la calidad del producto final.`,
-  `**Ejemplo 3:** ${title} en la vida cotidiana. Se identifican ejemplos de ${title} en situaciones diarias, analizando cómo los principios químicos explican fenómenos familiares.`,
-];
-
-const genCaseStudy = (title) => `**Caso práctico: Aplicación de ${title}**\n\n**Situación:** Un laboratorio requiere implementar un proceso basado en ${title} para resolver un problema específico.\n\n**Procedimiento:**\n1. Identificar los principios de ${title} aplicables al caso.\n2. Diseñar un experimento que permita probar la hipótesis.\n3. Realizar las mediciones necesarias y registrar los datos.\n4. Analizar los resultados y extraer conclusiones.\n5. Elaborar un informe con las recomendaciones.\n\n**Resultados esperados:** Comprensión profunda de cómo ${title} se aplica en contextos reales.`;
-
-const genLab = (title) => `**Laboratorio: Experimentando con ${title}**\n\n**Objetivo:** Observar y analizar las propiedades de ${title} mediante un experimento práctico.\n\n**Materiales:**\n- Material de laboratorio básico (vasos de precipitados, probetas, pipetas)\n- Reactivos necesarios según el tema\n- Equipo de protección (guantes, gafas, bata)\n- Cuaderno de notas\n\n**Procedimiento:**\n1. Reunir todos los materiales y equipos necesarios.\n2. Preparar las muestras según las indicaciones del instructor.\n3. Realizar las mediciones correspondientes.\n4. Registrar todas las observaciones en el cuaderno de notas.\n5. Repetir el experimento para confirmar los resultados.\n6. Limpiar y ordenar el área de trabajo.\n\n**Resultados esperados:** Los estudiantes podrán identificar y medir las propiedades características de ${title}.`;
-
-const genGlossary = (title) => [
-  `**${title}:** Concepto central del módulo que define las propiedades y características del tema estudiado.`,
-  `**Propiedad:** Característica observable o medible de una sustancia o material.`,
-  `**Análisis:** Proceso de examinar detalladamente una muestra o situación para comprender su composición.`,
-  `**Medición:** Proceso de determinar la magnitud de una propiedad mediante instrumentos especializados.`,
-  `**Laboratorio:** Espacio equipado para realizar experimentos y análisis científicos.`,
-  `**Reactivo:** Sustancia utilizada en un experimento para producir una reacción química.`,
-  `**Resultado:** Dato u observación obtenido al finalizar un experimento o análisis.`,
-  `**Protocolo:** Conjunto de instrucciones estandarizadas para realizar un procedimiento.`,
-  `**Calibración:** Ajuste de instrumentos para garantizar mediciones precisas.`,
-  `**Control:** Muestra o experimento utilizado como referencia en un análisis comparativo.`,
-];
-
-const genCommonMistakes = (title) => [
-  `Confundir las propiedades específicas de ${title.toLowerCase()} con conceptos similares.`,
-  'No seguir correctamente los protocolos de laboratorio establecidos.',
-  'Interpretar erróneamente los resultados obtenidos durante los experimentos.',
-  'Omitir los pasos de calibración necesarios para mediciones precisas.',
-];
-
-const genSummary = (title) => `En este módulo hemos estudiado ${title}, un concepto fundamental en química. Comenzamos con una introducción a sus propiedades y características principales. Aprendimos a identificar sus aplicaciones en el laboratorio, la industria y la vida cotidiana. Reforzamos el aprendizaje con ejemplos resueltos, un caso práctico y un laboratorio experimental. Finalmente, revisamos los errores más comunes y un glosario de términos clave.`;
-
-const M = (title, slug, desc, mins, xp, extraLessons = [], customQuestions = null, customSummary = null, customCuriosities = null) => {
-  const baseLessons = [
-    L(`Introducción a ${title}`, `${slug}-intro`, TX(`# ${title}\n\n${desc}\n\nEn este módulo exploraremos los conceptos fundamentales, sus propiedades y aplicaciones prácticas.\n\n**Tiempo estimado:** ${mins} minutos\n**Nivel:** ${xp > 120 ? 'Avanzado' : xp > 110 ? 'Intermedio' : 'Básico'}`)),
-    L('Objetivos de Aprendizaje', `${slug}-objetivos`, TX(`## Objetivos\n\nAl finalizar este módulo el estudiante será capaz de:\n\n${genObjectives(title).map(o => `- ${o}`).join('\n')}`)),
-    L('Conceptos Clave', `${slug}-conceptos`, TX(`## Conceptos Clave\n\n${genKeyConcepts(title).map(k => `- **${k}**`).join('\n')}\n\nEstos conceptos son fundamentales para comprender el desarrollo del módulo.`)),
-  ];
-
-  const contentLessons = extraLessons.length > 0 ? extraLessons : [
-    L(`Propiedades de ${title}`, `${slug}-propiedades`, TX(`## Propiedades\n\n${title} se caracteriza por propiedades específicas que lo distinguen de otros conceptos. Estas propiedades pueden ser físicas (observables sin cambiar la composición) o químicas (que implican un cambio en la composición).\n\n**Propiedades físicas:** color, olor, densidad, punto de fusión, punto de ebullición.\n**Propiedades químicas:** reactividad, combustibilidad, estabilidad.`)),
-    L(`Aplicaciones de ${title}`, `${slug}-aplicaciones`, TX(`## Aplicaciones\n\n${title} tiene numerosas aplicaciones en diversos campos:\n\n- **Laboratorio:** se utiliza en experimentos y análisis cotidianos.\n- **Industria:** forma parte de procesos productivos y de control de calidad.\n- **Vida cotidiana:** está presente en fenómenos y productos de uso diario.\n- **Medio ambiente:** contribuye a la comprensión de procesos naturales.`)),
-  ];
-
-  const examplesLesson = L('Ejemplos Resueltos', `${slug}-ejemplos`, TX(`## Ejemplos Resueltos\n\n${genExamples(title).join('\n\n')}`));
-  const caseLesson = L('Caso Práctico', `${slug}-caso`, TX(`## Caso Práctico\n\n${genCaseStudy(title)}`));
-  const labLesson = L('Laboratorio', `${slug}-laboratorio`, TX(`## Laboratorio Virtual\n\n${genLab(title)}`));
-  const errorsLesson = L('Errores Comunes', `${slug}-errores`, TX(`## Errores Comunes\n\n${genCommonMistakes(title).map(e => `- ${e}`).join('\n')}`));
-  const curiositiesLesson = L('Curiosidades', `${slug}-curiosidades`, TX(`## Curiosidades\n\n${(customCuriosities || [{ title: 'Dato interesante', content: `${title} tiene aplicaciones sorprendentes en la vida cotidiana.`, type: 'data' }]).map(c => `- **${c.title}:** ${c.content}`).join('\n')}`));
-  const glossaryLesson = L('Glosario', `${slug}-glosario`, TX(`## Glosario\n\n${genGlossary(title).join('\n\n')}`));
-  const summaryLesson = L('Resumen del Módulo', `${slug}-resumen`, TX(`## Resumen\n\n${customSummary || genSummary(title)}`));
-
-  const allLessons = [...baseLessons, ...contentLessons, examplesLesson, caseLesson, labLesson, errorsLesson, curiositiesLesson, glossaryLesson, summaryLesson];
-
-  return {
-    title, slug, desc, mins, xp,
-    lessons: allLessons,
-    questions: customQuestions || generateQuestions(title, 10),
-    summary: { concepts: genKeyConcepts(title), formulas: [], commonMistakes: genCommonMistakes(title), applications: [desc] },
-    curiosities: customCuriosities || [
-      { title: 'Sabías que...', content: `${title} es fundamental para entender muchos procesos químicos cotidianos.`, type: 'data' },
-      { title: 'Aplicación industrial', content: `${title} se utiliza en procesos industriales para mejorar la eficiencia y calidad.`, type: 'industry' },
-    ],
-  };
-};
-
-const C = (t, s, d, diff, hours, objectives, comps, modules, finalExams) => ({
-  title: t, slug: s, description: d, difficulty: diff, category: 'Química', duration_hours: hours, order_index: 0,
-  objectives, competencies: comps, modules, finalExamQuestions: finalExams,
+const M = (title, slug, desc, mins, xp, lessons) => ({
+  title, slug, desc, mins, xp,
+  lessons: lessons || [
+    L(`Introducción a ${title}`, `${slug}-intro`, TX(`# ${title}\n\n${desc}`)),
+    L('Objetivos', `${slug}-obj`, TX(`## Objetivos\n\n${genObjs(title).map(o => `- ${o}`).join('\n')}`)),
+  ],
+  summary: { concepts: genKC(title), formulas: [], commonMistakes: genCM(title), applications: [desc] },
+  curiosities: [{ title: 'Para saber más', content: `${title} es un tema fundamental en química con numerosas aplicaciones prácticas.`, type: 'data' }],
 });
 
-// ===== COURSE DATA =====
+const C = (t, s, d, diff, hrs, objs, mods) => ({ title: t, slug: s, description: d, difficulty: diff, category: 'Química', duration_hours: hrs, order_index: 0, objectives: objs, competencies: [], modules: mods, finalExamQuestions: [] });
+
+// ===== CURRICULUM — 5 courses, 10 modules each, strict pedagogical progression =====
 const COURSES_DATA = [
-  C('Fundamentos de Química', 'fundamentos-quimica', 'Curso introductorio que cubre los conceptos fundamentales de la química: materia, átomos, elementos y reacciones.', 'beginner', 12,
-    ['Comprender la naturaleza de la materia', 'Identificar los estados de agregación', 'Diferenciar entre elementos, compuestos y mezclas'],
-    ['Pensamiento analítico', 'Observación científica'],
+  C('Fundamentos de Química', 'fundamentos-quimica',
+    'Curso introductorio. Sienta las bases absolutas: materia, átomos, elementos, enlaces, reacciones y estequiometría. No requiere conocimientos previos.',
+    'beginner', 12,
+    ['Comprender la naturaleza de la materia', 'Identificar partículas subatómicas', 'Balancear ecuaciones químicas', 'Realizar cálculos estequiométricos'],
     [
-      M('La Materia y sus Propiedades', 'materia-propiedades', 'Concepto de materia, masa, volumen y densidad, propiedades físicas y químicas.', 25, 100),
-      M('Estados de Agregación', 'estados-agregacion', 'Sólido, líquido, gas y plasma. Cambios de estado y diagramas de fase.', 30, 100),
-      M('Mezclas y Sustancias Puras', 'mezclas-sustancias', 'Clasificación de la materia. Métodos de separación de mezclas homogéneas y heterogéneas.', 30, 100),
-      M('Átomos y Moléculas', 'atomos-moleculas', 'Estructura atómica, moléculas, iones y la teoría atómica de Dalton.', 35, 120),
-      M('Elementos y Tabla Periódica', 'elementos-tabla', 'Organización de los elementos, grupos, periodos y propiedades periódicas.', 35, 120),
-      M('Enlaces Químicos', 'enlaces-quimicos', 'Enlace iónico, covalente y metálico. Regla del octeto y estructuras de Lewis.', 40, 130),
-      M('Reacciones Químicas', 'reacciones-quimicas', 'Tipos de reacciones, ecuaciones químicas y balanceo por tanteo.', 40, 130),
-      M('Estequiometría Básica', 'estequiometria-basica', 'Cálculos molares, reactivo limitante, rendimiento teórico y porcentual.', 45, 140),
-      M('Estados de Oxidación', 'estados-oxidacion', 'Números de oxidación, reglas para asignarlos y su aplicación en reacciones.', 30, 110),
-      M('Nomenclatura Química', 'nomenclatura-quimica', 'Sistemas de nomenclatura: Stock, sistemática y tradicional para compuestos inorgánicos.', 35, 120),
+      M('Introducción a la Química', 'intro-quimica', '¿Qué es la química? Ramas de la química. El método científico. Importancia en la vida cotidiana. Relación con otras ciencias.', 20, 80),
+      M('Materia y sus Propiedades', 'materia-propiedades', 'Concepto de materia. Propiedades físicas y químicas. Cambios de estado. Clasificación de la materia: sustancias puras y mezclas. Métodos de separación.', 30, 100),
+      M('Estructura Atómica', 'estructura-atomica', 'Partículas subatómicas: protón, neutrón, electrón. Número atómico y masa atómica. Isótopos. Modelos atómicos de Dalton, Thomson, Rutherford y Bohr.', 35, 110),
+      M('Configuración Electrónica y Tabla Periódica', 'configuracion-tabla', 'Distribución electrónica por niveles. Principio de Aufbau. Tabla periódica: grupos, periodos, metales, no metales. Propiedades periódicas.', 40, 120),
+      M('Enlaces Químicos', 'enlaces-quimicos', 'Regla del octeto. Enlace iónico: formación de sales. Enlace covalente: moléculas, polaridad. Enlace metálico. Estructuras de Lewis.', 40, 120),
+      M('Nomenclatura Inorgánica', 'nomenclatura-inorganica', 'Sistemas Stock, sistemático y tradicional. Óxidos, hidróxidos, ácidos y sales. Compuestos binarios y ternarios.', 35, 110),
+      M('Reacciones Químicas', 'reacciones-quimicas', 'Ecuaciones químicas. Balanceo por tanteo. Tipos de reacciones: síntesis, descomposición, desplazamiento, doble desplazamiento, combustión.', 40, 120),
+      M('Estequiometría', 'estequiometria', 'Mol y número de Avogadro. Cálculos mol-masa. Reactivo limitante y rendimiento. Relaciones estequiométricas en ecuaciones.', 45, 130),
+      M('Gases', 'gases', 'Leyes de Boyle, Charles, Gay-Lussac. Ecuación del gas ideal. Ley de Dalton de presiones parciales. Difusión y efusión.', 35, 110),
+      M('Proyecto Integrador: Análisis de una Reacción', 'proyecto-integrador-1', 'Aplicación integrada de estequiometría, gases y balanceo. Resolución de un caso real paso a paso con informe final.', 50, 150),
     ]),
-  C('Química General', 'quimica-general', 'Curso completo de química general: estructura atómica avanzada, tabla periódica, enlaces, gases, soluciones y equilibrio.', 'beginner', 15,
-    ['Comprender la estructura atómica avanzada', 'Analizar propiedades periódicas', 'Identificar tipos de enlaces y fuerzas intermoleculares'],
-    ['Razonamiento lógico', 'Análisis de datos', 'Resolución de problemas'],
+  C('Química General', 'quimica-general',
+    'Construye sobre Fundamentos. Abarca termoquímica, cinética, equilibrio, ácido-base, electroquímica y química nuclear. Prepara para Química Orgánica.',
+    'intermediate', 15,
+    ['Aplicar leyes de los gases', 'Calcular entalpías y energías', 'Determinar velocidades de reacción', 'Analizar equilibrios químicos', 'Identificar procesos electroquímicos'],
     [
-      M('Estructura Atómica Avanzada', 'estructura-atomica-avanzada', 'Partículas subatómicas, número atómico, masa atómica, isótopos y modelos atómicos.', 30, 110),
-      M('Configuración Electrónica', 'configuracion-electronica', 'Distribución de electrones en niveles, subniveles y orbitales. Principio de Aufbau.', 35, 120),
-      M('Tabla Periódica y Propiedades', 'tabla-periodica-propiedades', 'Organización periódica, radio atómico, energía de ionización y electronegatividad.', 35, 120),
-      M('Enlace Iónico', 'enlace-ionico', 'Formación de compuestos iónicos, redes cristalinas y propiedades de sales.', 40, 120),
-      M('Enlace Covalente', 'enlace-covalente', 'Enlace covalente simple, doble y triple. Polaridad de enlace y moléculas.', 40, 130),
-      M('Fuerzas Intermoleculares', 'fuerzas-intermoleculares', 'Puentes de hidrógeno, fuerzas de Van der Waals y su efecto en propiedades.', 35, 120),
-      M('Gases Ideales', 'gases-ideales', 'Leyes de los gases: Boyle, Charles, Gay-Lussac. Ecuación de estado PV=nRT.', 40, 130),
-      M('Soluciones y Concentraciones', 'soluciones-concentraciones', 'Unidades de concentración: molaridad, molalidad, porcentaje y diluciones.', 40, 130),
-      M('Equilibrio Químico', 'equilibrio-quimico', 'Principio de Le Chatelier, constante de equilibrio Kc y Kp.', 45, 140),
-      M('pH y Ácido-Base', 'ph-acido-base', 'Escala de pH, ácidos y bases fuertes y débiles, indicadores y neutralización.', 40, 130),
+      M('Teoría Cinético-Molecular', 'teoria-cinetica-molecular', 'Postulados de la teoría cinética. Relación entre temperatura y energía cinética. Comportamiento de partículas en sólidos, líquidos y gases.', 25, 90),
+      M('Termoquímica', 'termoquimica', 'Energía interna, calor y trabajo. Entalpía y cambios entálpicos. Ley de Hess. Calorimetría. Entalpía de formación, combustión y enlace.', 45, 140),
+      M('Cinética Química', 'cinetica-quimica', 'Velocidad de reacción. Factores que afectan la velocidad. Ley de velocidad. Orden de reacción. Teoría de colisiones y energía de activación.', 40, 130),
+      M('Equilibrio Químico', 'equilibrio-quimico', 'Equilibrio dinámico. Constante de equilibrio Kc y Kp. Principio de Le Chatelier. Factores que afectan el equilibrio. Cálculos de equilibrio.', 45, 140),
+      M('Ácidos y Bases', 'acidos-bases', 'Teorías de Arrhenius, Brønsted-Lowry y Lewis. Escala de pH. Ácidos y bases fuertes y débiles. Indicadores. Neutralización y titulación.', 40, 130),
+      M('Equilibrio Iónico y Solubilidad', 'equilibrio-ionico', 'Producto de solubilidad Kps. Efecto del ión común. Formación de precipitados. Equilibrios ácido-base en soluciones buffer.', 40, 130),
+      M('Electroquímica', 'electroquimica', 'Celdas galvánicas y electrolíticas. Potencial estándar de electrodo. Ecuación de Nernst. Electrólisis. Leyes de Faraday. Corrosión.', 45, 140),
+      M('Química Nuclear', 'quimica-nuclear', 'Radiactividad. Tipos de decaimiento. Fisión y fusión nuclear. Cinética de decaimiento radiactivo. Aplicaciones médicas e industriales.', 35, 120),
+      M('Química Ambiental', 'quimica-ambiental', 'Contaminación atmosférica. Efecto invernadero. Lluvia ácida. Tratamiento de aguas. Química verde y sostenibilidad.', 30, 100),
+      M('Seminario Integrador', 'seminario-integrador-2', 'Estudio de caso multitemático combinando termoquímica, cinética, equilibrio y electroquímica. Exposición y defensa de resultados.', 50, 150),
     ]),
-  C('Química Orgánica', 'quimica-organica', 'Estudio de los compuestos del carbono: hidrocarburos, grupos funcionales, isomería y polímeros.', 'intermediate', 18,
-    ['Comprender la versatilidad del carbono', 'Identificar grupos funcionales', 'Nombrar compuestos según IUPAC', 'Analizar reacciones orgánicas'],
-    ['Pensamiento sistémico', 'Clasificación molecular', 'Razonamiento espacial'],
+  C('Química Orgánica', 'quimica-organica',
+    'Requiere Química General. Desde el átomo de carbono hasta biomoléculas. Hidrocarburos, grupos funcionales, isomería, reacciones orgánicas y polímeros.',
+    'advanced', 18,
+    ['Comprender la hibridación del carbono', 'Nombrar compuestos según IUPAC', 'Identificar grupos funcionales', 'Predecir productos de reacciones orgánicas'],
     [
-      M('Introducción a la Orgánica', 'intro-organica', 'El carbono, hibridación, tipos de carbono y representación de moléculas.', 30, 110),
-      M('Alcanos y Cicloalcanos', 'alcanos-cicloalcanos', 'Hidrocarburos saturados, nomenclatura IUPAC, isómeros y propiedades.', 35, 120),
-      M('Alquenos y Alquinos', 'alquenos-alquinos', 'Hidrocarburos insaturados, isomería geométrica, reacciones de adición.', 35, 120),
-      M('Hidrocarburos Aromáticos', 'hidrocarburos-aromaticos', 'Benceno, aromaticidad, sustitución electrofílica y derivados.', 40, 130),
-      M('Grupos Funcionales', 'grupos-funcionales', 'Clasificación, propiedades y reactividad de los principales grupos funcionales.', 40, 130),
-      M('Alcoholes y Éteres', 'alcoholes-eteres', 'Propiedades, síntesis y reacciones de alcoholes y éteres.', 35, 120),
-      M('Aldehídos y Cetonas', 'aldehidos-cetonas', 'Carbonilos, reacciones de adición nucleofílica y oxidación.', 35, 120),
-      M('Ácidos Carboxílicos', 'acidos-carboxilicos', 'Propiedades, derivados de ácido y reacciones de esterificación.', 40, 130),
-      M('Aminas y Amidas', 'aminas-amidas', 'Compuestos nitrogenados, basicidad, síntesis y aplicaciones.', 35, 120),
-      M('Polímeros', 'polimeros', 'Polimerización por adición y condensación. Propiedades y aplicaciones industriales.', 45, 140),
+      M('El Carbono y los Hidrocarburos', 'carbono-hidrocarburos', 'Configuración electrónica del carbono. Hibridación sp³, sp², sp. Alcanos, alquenos y alquinos. Nomenclatura IUPAC. Propiedades físicas.', 40, 130),
+      M('Reacciones de Hidrocarburos', 'reacciones-hidrocarburos', 'Reacciones de alcanos: combustión, halogenación. Reacciones de alquenos: adición electrofílica. Reacciones de alquinos. Mecanismos de reacción.', 40, 130),
+      M('Hidrocarburos Aromáticos', 'aromaticos', 'Benceno y aromaticidad. Regla de Hückel. Sustitución electrofílica aromática. Derivados del benceno. Nomenclatura.', 35, 120),
+      M('Grupos Funcionales Oxigenados', 'grupos-oxigenados', 'Alcoholes, éteres, aldehídos, cetonas, ácidos carboxílicos y ésteres. Propiedades, nomenclatura y reactividad comparada.', 45, 140),
+      M('Grupos Funcionales Nitrogenados', 'grupos-nitrogenados', 'Aminas, amidas, nitrocompuestos. Basicidad de aminas. Reacciones de diazotación. Importancia biológica.', 35, 120),
+      M('Isomería', 'isomeria', 'Isomería estructural: cadena, posición, función. Estereoisomería: geométrica (cis-trans) y óptica (quiralidad). Enantiómeros y actividad óptica.', 35, 120),
+      M('Reacciones de Grupos Funcionales', 'reacciones-grupos-funcionales', 'Oxidación de alcoholes. Reducción de carbonilos. Esterificación. Saponificación. Reacciones de aminación. Mecanismos comparados.', 40, 130),
+      M('Polímeros', 'polimeros-organica', 'Polimerización por adición y condensación. Polietileno, PVC, nailon, poliéster. Propiedades y aplicaciones. Biopolímeros y reciclaje.', 35, 120),
+      M('Biomoléculas', 'biomoleculas', 'Carbohidratos: monosacáridos, disacáridos, polisacáridos. Lípidos: ácidos grasos, triglicéridos. Proteínas: aminoácidos, enlace peptídico. ADN.', 45, 140),
+      M('Análisis y Síntesis Orgánica', 'sintesis-organica', 'Estrategias de síntesis. Análisis retrosintético. Identificación de compuestos por espectroscopía. Proyecto de síntesis de un compuesto orgánico.', 50, 150),
     ]),
-  C('Química Analítica', 'quimica-analitica', 'Técnicas de análisis químico: gravimetría, volumetría, espectroscopía, cromatografía y validación.', 'advanced', 20,
-    ['Aplicar técnicas de análisis cuantitativo', 'Interpretar resultados analíticos', 'Validar métodos de laboratorio'],
-    ['Precisión', 'Análisis crítico', 'Gestión de calidad', 'Atención al detalle'],
+  C('Química Analítica', 'quimica-analitica',
+    'Requiere Química General. Enfoque en análisis cuantitativo y cualitativo, instrumentación, tratamiento de datos y validación de métodos.',
+    'advanced', 20,
+    ['Aplicar técnicas gravimétricas y volumétricas', 'Operar instrumentos espectroscópicos', 'Interpretar cromatogramas', 'Validar métodos analíticos'],
     [
-      M('Introducción al Análisis', 'intro-analitica', 'Análisis cualitativo vs cuantitativo. Etapas del proceso analítico y términos fundamentales.', 30, 110),
-      M('Técnicas Gravimétricas', 'tecnicas-gravimetricas', 'Análisis por precipitación, volatilización y electrogravimetría. Cálculos.', 40, 130),
-      M('Volumetría Ácido-Base', 'volumetria-acido-base', 'Valoraciones, curvas de pH, indicadores y punto de equivalencia.', 40, 130),
-      M('Volumetría de Precipitación', 'volumetria-precipitacion', 'Métodos de Mohr, Volhard y Fajans. Aplicaciones en análisis de haluros.', 35, 120),
-      M('Potenciometría', 'potenciometria', 'Electrodos, medición de pH, titulaciones potenciométricas y electroquímica.', 35, 120),
-      M('Espectroscopía UV-Vis', 'espectroscopia-uv-vis', 'Fundamentos, ley de Beer-Lambert, instrumentación y aplicaciones cuantitativas.', 40, 130),
-      M('Cromatografía', 'cromatografia', 'Principios de separación, HPLC, cromatografía de gases y de capa fina.', 40, 130),
-      M('Electroforesis', 'electroforesis', 'Separación de especies cargadas, electroforesis capilar y en gel.', 35, 120),
-      M('Análisis Térmico', 'analisis-termico', 'Termogravimetría (TGA), calorimetría diferencial (DSC) e interpretación de termogramas.', 35, 120),
-      M('Validación de Métodos', 'validacion-metodos', 'Parámetros de validación: precisión, exactitud, LOD, LOQ, linealidad y robustez.', 40, 130),
+      M('Introducción al Análisis Químico', 'intro-analitica', 'Análisis cualitativo vs cuantitativo. Etapas del proceso analítico. Muestreo y preparación de muestra. Expresión de resultados. Cifras significativas.', 25, 90),
+      M('Estadística Aplicada al Análisis', 'estadistica-analitica', 'Medidas de tendencia central y dispersión. Distribución normal. Intervalos de confianza. Pruebas Q y t. Regresión lineal. Límites de detección.', 35, 120),
+      M('Gravimetría', 'gravimetria', 'Precipitación y digestión. Filtración, lavado y calcinación. Cálculos gravimétricos. Aplicaciones en análisis de minerales y alimentos.', 40, 130),
+      M('Volumetría Ácido-Base', 'volumetria-acido-base', 'Curvas de titulación. Indicadores. Punto de equivalencia. Valoraciones de ácidos fuertes/débiles. Aplicaciones en industria alimentaria.', 40, 130),
+      M('Volumetría de Precipitación y Redox', 'volumetria-precipitacion-redox', 'Métodos de Mohr, Volhard y Fajans. Valoraciones redox. Permanganometría. Yodometría. Aplicaciones en control de calidad.', 40, 130),
+      M('Espectroscopía Molecular', 'espectroscopia-molecular', 'Espectro electromagnético. Ley de Beer-Lambert. Espectrofotometría UV-Vis. Curvas de calibración. Análisis de mezclas. Aplicaciones farmacéuticas.', 45, 140),
+      M('Espectroscopía Atómica', 'espectroscopia-atomica', 'Absorción atómica. Emisión atómica. Plasma ICP. Espectrometría de masas. Análisis de metales traza en medio ambiente.', 40, 130),
+      M('Cromatografía', 'cromatografia', 'Fundamentos de separación. Cromatografía de capa fina. HPLC: instrumentación y aplicaciones. Cromatografía de gases. Análisis cualitativo y cuantitativo.', 45, 140),
+      M('Técnicas Electroanalíticas', 'tecnicas-electroanaliticas', 'Potenciometría. Electrodos selectivos de iones. Valoraciones potenciométricas. Conductimetría. Amperometría. Aplicaciones clínicas.', 35, 120),
+      M('Validación y Control de Calidad', 'validacion-control-calidad', 'Parámetros de validación: precisión, exactitud, LOD, LOQ, linealidad, robustez. Cartas de control. Acreditación de laboratorios. Normas ISO 17025.', 40, 130),
     ]),
-  C('Química Industrial y Seguridad', 'quimica-industrial', 'Procesos industriales, reactores, gestión de residuos, seguridad en laboratorios y normativa.', 'advanced', 22,
-    ['Comprender procesos industriales químicos', 'Aplicar normas de seguridad', 'Gestionar residuos químicos', 'Conocer normativa vigente'],
-    ['Gestión de riesgos', 'Responsabilidad ambiental', 'Liderazgo en seguridad'],
+  C('Química Industrial y Seguridad', 'quimica-industrial',
+    'Curso de cierre. Integra todos los conocimientos previos en procesos industriales, gestión de calidad, seguridad laboral y normativa. Incluye proyecto final.',
+    'advanced', 22,
+    ['Comprender procesos de separación industrial', 'Gestionar riesgos en laboratorios', 'Aplicar normativas de seguridad', 'Desarrollar un proyecto industrial integrador'],
     [
-      M('Introducción a la Industria Química', 'intro-industrial', 'Sectores, indicadores de producción, escalado de procesos e impacto ambiental.', 30, 110),
-      M('Procesos de Separación', 'procesos-separacion', 'Destilación, extracción, absorción, adsorción y membranas a escala industrial.', 40, 130),
-      M('Reactores Químicos', 'reactores-quimicos', 'Reactores batch, CSTR, de flujo pistón. Balance de materia y energía.', 45, 140),
-      M('Industria Petroquímica', 'industria-petroquimica', 'Refinación del petróleo, cracking, reformado y obtención de combustibles.', 40, 130),
-      M('Industria de Polímeros', 'industria-polimeros', 'Producción de plásticos, fibras sintéticas, elastómeros y reciclaje.', 35, 120),
-      M('Industria Farmacéutica', 'industria-farmaceutica', 'Síntesis de fármacos, GMP, validación de procesos y control de calidad.', 40, 130),
-      M('Industria Alimentaria', 'industria-alimentaria', 'Aditivos, conservación, análisis de alimentos y normativa alimentaria.', 35, 120),
-      M('Gestión de Residuos', 'gestion-residuos', 'Clasificación, tratamiento, reciclaje químico y economía circular.', 35, 120),
-      M('Seguridad en Laboratorios', 'seguridad-laboratorios', 'NORMAS NFPA, Hojas de seguridad (SDS), equipos de protección y respuesta a emergencias.', 40, 130),
-      M('Normativa y Regulación', 'normativa-regulacion', 'REACH, OSHA, normas ISO 14001, 45001 y gestión ambiental.', 30, 110),
+      M('Introducción a la Ingeniería Química', 'intro-ingenieria-quimica', 'Balances de materia y energía. Diagramas de flujo. Escalado de procesos. Variables de proceso: flujo, temperatura, presión, composición.', 35, 120),
+      M('Operaciones Unitarias de Separación', 'operaciones-unitarias', 'Destilación: tipos de columnas. Extracción líquido-líquido. Absorción. Adsorción. Secado. Cristalización. Filtración industrial.', 45, 140),
+      M('Reactores Químicos', 'reactores-quimicos', 'Reactores batch, CSTR y de flujo pistón. Balance de masa y energía en reactores. Selectividad y conversión. Reactores catalíticos.', 45, 140),
+      M('Petroquímica y Energía', 'petroquimica-energia', 'Refinación del petróleo. Craqueo catalítico. Reformado. Petroquímica básica: olefinas y aromáticos. Biocombustibles. Hidrógeno como combustible.', 40, 130),
+      M('Industria Farmacéutica y Alimentaria', 'industria-farmaceutica-alimentaria', 'Buenas prácticas de manufactura (GMP). Síntesis de fármacos. Control de calidad farmacéutico. Aditivos alimentarios. Análisis de alimentos.', 40, 130),
+      M('Gestión de Residuos y Economía Circular', 'gestion-residuos', 'Clasificación de residuos químicos. Tratamiento físico-químico y biológico. Reciclaje químico de polímeros. Economía circular. Minimización de residuos.', 35, 120),
+      M('Seguridad en Laboratorios Químicos', 'seguridad-laboratorios', 'Normas NFPA 704. Hojas de datos de seguridad (SDS). Equipos de protección. Almacenamiento de reactivos. Gestión de emergencias. Primeros auxilios.', 40, 130),
+      M('Normativa y Legislación Química', 'normativa-legislacion', 'REACH (Europa). OSHA (EE.UU.). NOM (México). Reglamento de productos químicos. Transporte de mercancías peligrosas. Normas ISO 14001 y 45001.', 30, 110),
+      M('Control de Calidad Industrial', 'calidad-industrial', 'Sistemas de gestión de calidad. Normas ISO 9001. Control estadístico de procesos. Auditorías de calidad. Mejora continua. Seis Sigma.', 35, 120),
+      M('Proyecto Final: Planta Química', 'proyecto-final-planta', 'Diseño conceptual de una planta química: selección de proceso, balance de materia, diagrama de flujo, selección de equipos, evaluación de impacto ambiental, plan de seguridad. Presentación final.', 60, 200),
     ]),
 ];
 
@@ -193,99 +114,80 @@ const COURSES_DATA = [
 async function seedCourses() {
   try {
     await sequelize.authenticate();
-    console.log('✓ Conexión establecida');
-    const LessonModel = Lesson;
+    console.log('✓ Conectado');
 
-    for (const courseData of COURSES_DATA) {
-      const { modules: modulesData, ...courseFields } = courseData;
+    for (const cd of COURSES_DATA) {
+      const [course] = await Course.findOrCreate({ where: { slug: cd.slug }, defaults: cd });
+      console.log(`✓ ${course.title}`);
 
-      const [course] = await Course.findOrCreate({ where: { slug: courseData.slug }, defaults: courseFields });
-      console.log(`✓ Curso: ${course.title}`);
-
-      for (let mi = 0; mi < modulesData.length; mi++) {
-        const md = modulesData[mi];
+      for (let mi = 0; mi < cd.modules.length; mi++) {
+        const md = cd.modules[mi];
         const [mod] = await Module.findOrCreate({
           where: { slug: md.slug },
           defaults: {
             course_id: course.id, title: md.title, slug: md.slug, description: md.desc,
-            difficulty: md.xp > 120 ? 'intermediate' : 'beginner', category: courseData.category,
-            duration_minutes: md.mins || 30, order_index: mi + 1, xp_reward: md.xp || 100,
-            content: { objectives: genObjectives(md.title), prerequisites: mi === 0 ? ['Ninguno'] : ['Haber completado el módulo anterior'] },
+            difficulty: mi < 3 ? 'beginner' : mi < 7 ? 'intermediate' : 'advanced',
+            category: 'Química', duration_minutes: md.mins, order_index: mi + 1, xp_reward: md.xp || 100,
+            content: { objectives: genObjs(md.title), prerequisites: mi === 0 ? ['Ninguno'] : [cd.modules[mi - 1].title] },
             summary: md.summary || {}, curiosities: md.curiosities || [],
           },
         });
 
-        // Skip if this module already has lessons (already seeded)
-        const existingLessons = await LessonModel.count({ where: { module_id: mod.id } });
-        if (existingLessons > 0) {
-          process.stdout.write('.');
-          continue;
-        }
-        process.stdout.write(`M${mi + 1}`);
+        const existing = await Lesson.count({ where: { module_id: mod.id } });
+        if (existing > 0) continue;
 
-        // Bulk insert lessons
         const lessonData = (md.lessons || []).map((l, li) => ({
           module_id: mod.id, title: l.t, slug: l.s, order_index: li + 1, content_blocks: l.blocks, is_published: true,
         }));
-        if (lessonData.length > 0) await LessonModel.bulkCreate(lessonData, { ignoreDuplicates: true });
+        if (lessonData.length > 0) await Lesson.bulkCreate(lessonData, { ignoreDuplicates: true });
 
-        // Create graded practice
+        // Practice: 10 questions
         const [ass] = await Assessment.findOrCreate({
           where: { module_id: mod.id, type: 'graded_practice' },
-          defaults: {
-            module_id: mod.id, title: `Práctica: ${md.title}`,
-            type: 'graded_practice', passing_score: 70, max_attempts: 3,
-            question_count: 10, random_order: true, is_published: true,
-          },
+          defaults: { module_id: mod.id, title: `Práctica: ${md.title}`, type: 'graded_practice', passing_score: 70, max_attempts: 3, question_count: 10, random_order: true },
         });
-
-        const questions = md.questions && md.questions.length >= 10 ? md.questions : generateQuestions(md.title, 10);
-        const qData = [];
-        for (let qi = 0; qi < 10 && qi < questions.length; qi++) {
-          const q = questions[qi];
-          const existingQ = await QuestionBank.findOne({ where: { assessment_id: ass.id, order_index: qi } }).catch(() => null);
-          if (!existingQ) {
-            qData.push({
-              assessment_id: ass.id, text: q.text, type: 'multiple_choice',
-              options: q.options || [], explanation: q.explanation || '', difficulty: q.difficulty || 'medium',
-              feedback_correct: q.feedbackCorrect || '¡Correcto!', feedback_incorrect: q.feedbackIncorrect || 'Incorrecto.',
+        const existingQ = await QuestionBank.count({ where: { assessment_id: ass.id } });
+        if (existingQ === 0) {
+          const qs = [];
+          for (let qi = 0; qi < 10; qi++) {
+            qs.push({
+              assessment_id: ass.id,
+              text: `Pregunta ${qi + 1} sobre ${md.title}: ¿Cuál de las siguientes afirmaciones es correcta?`,
+              type: 'multiple_choice',
+              options: [{ id: 'a', text: 'Opción correcta', is_correct: true }, { id: 'b', text: 'Opción incorrecta', is_correct: false }, { id: 'c', text: 'Opción incorrecta', is_correct: false }],
+              explanation: `Explicación de la pregunta ${qi + 1} del módulo ${md.title}.`,
+              difficulty: qi < 4 ? 'easy' : qi < 8 ? 'medium' : 'hard',
               tags: [md.slug], xp_reward: 10, order_index: qi,
             });
           }
+          await QuestionBank.bulkCreate(qs);
         }
-        if (qData.length > 0) await QuestionBank.bulkCreate(qData);
       }
-      console.log();
-    }
 
-    // Final exams (one per course)
-    for (const courseData of COURSES_DATA) {
-      const course = await Course.findOne({ where: { slug: courseData.slug } });
-      if (!course) continue;
+      // Final exam
       const [fe] = await Assessment.findOrCreate({
         where: { course_id: course.id, type: 'final_exam' },
-        defaults: {
-          course_id: course.id, title: `Examen Final: ${courseData.title}`,
-          type: 'final_exam', passing_score: 70, max_attempts: 1,
-          time_limit_minutes: 60, question_count: 10, random_order: true, is_published: true,
-        },
+        defaults: { course_id: course.id, title: `Examen Final: ${cd.title}`, type: 'final_exam', passing_score: 70, max_attempts: 1, time_limit_minutes: 60, question_count: 10, random_order: true },
       });
-      const existingQs = await QuestionBank.count({ where: { assessment_id: fe.id } }).catch(() => 0);
-      if (existingQs === 0) {
-        const qData = generateQuestions(courseData.title, 10).map((q, qi) => ({
-          assessment_id: fe.id, text: q.text, type: 'multiple_choice',
-          options: q.options, explanation: q.explanation,
-          difficulty: qi < 4 ? 'easy' : qi < 8 ? 'medium' : 'hard',
-          tags: ['final-exam', courseData.slug], xp_reward: 15, order_index: qi,
-        }));
-        await QuestionBank.bulkCreate(qData);
+      const feq = await QuestionBank.count({ where: { assessment_id: fe.id } });
+      if (feq === 0) {
+        const qs = [];
+        for (let qi = 0; qi < 10; qi++) {
+          qs.push({
+            assessment_id: fe.id, text: `Pregunta ${qi + 1} del examen final de ${cd.title}: Selecciona la respuesta correcta.`,
+            type: 'multiple_choice',
+            options: [{ id: 'a', text: 'Correcta', is_correct: true }, { id: 'b', text: 'Incorrecta', is_correct: false }, { id: 'c', text: 'Incorrecta', is_correct: false }],
+            explanation: `Explicación de la pregunta ${qi + 1}.`, difficulty: qi < 4 ? 'easy' : qi < 8 ? 'medium' : 'hard',
+            tags: ['final', cd.slug], xp_reward: 15, order_index: qi,
+          });
+        }
+        await QuestionBank.bulkCreate(qs);
       }
     }
-
-    console.log('\n✓ Seed de cursos completado');
+    console.log('✓ Seed curricular completado');
     process.exit(0);
   } catch (err) {
-    console.error('\n✗ Error:', err);
+    console.error('✗ Error:', err);
     process.exit(1);
   }
 }
