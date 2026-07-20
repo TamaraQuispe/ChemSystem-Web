@@ -73,23 +73,6 @@ async function chat(messages) {
   }
 }
 
-async function testConnection() {
-  try {
-    const res = await callOpenRouter([
-      { role: 'system', content: 'Responde solo con la palabra OK si funciono.' },
-      { role: 'user', content: 'Funcionas?' },
-    ]);
-    const reply = res.choices?.[0]?.message?.content;
-    return {
-      status: reply ? 'ok' : 'error',
-      reply: reply || res.error?.message || JSON.stringify(res).slice(0, 200),
-      model: MODEL,
-    };
-  } catch (err) {
-    return { status: 'error', error: err.message, model: MODEL };
-  }
-}
-
 async function suggestInterventions(atRiskStudents, className) {
   if (!API_KEY) return [];
   const studentData = atRiskStudents.map(s => `${s.name}: promedio ${s.average}%, tendencia ${s.trend > 0 ? '+' : ''}${s.trend}%`).join('\n');
@@ -118,4 +101,4 @@ async function recommendForParent(studentName, kpis, subjectProgress) {
   } catch { return { insights: [], summary: '' }; }
 }
 
-module.exports = { chat, testConnection, suggestInterventions, recommendForParent };
+module.exports = { chat, suggestInterventions, recommendForParent };

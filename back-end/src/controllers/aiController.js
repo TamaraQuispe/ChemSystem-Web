@@ -50,11 +50,4 @@ const recommendForParent = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-const testConnection = async (req, res, next) => {
-  try {
-    const result = await aiService.testConnection();
-    res.json({ success: true, data: result });
-  } catch (err) { next(err); }
-};
-
-module.exports = { getRecommendations, chat, suggestInterventions, recommendForParent, testConnection };
+module.exports = { getRecommendations, chat, suggestInterventions, recommendForParent };

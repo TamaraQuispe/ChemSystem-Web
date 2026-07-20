@@ -8,6 +8,5 @@ router.get('/recommendations', aiController.getRecommendations);
 router.post('/chat', authenticate, aiController.chat);
 router.post('/suggest', authenticate, aiController.suggestInterventions);
 router.post('/recommend', authenticate, aiController.recommendForParent);
-router.get('/test', aiController.testConnection);
 
 module.exports = router;
