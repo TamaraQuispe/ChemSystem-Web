@@ -12,7 +12,8 @@ const getRecommendations = async (req, res, next) => {
 
 const chat = async (req, res, next) => {
   try {
-    const result = await aiService.chat(req.body.messages || []);
+    const userMsg = req.body?.messages?.[0]?.content || req.body?.message || 'sin mensaje';
+    const result = { reply: `👋 ¡Hola! Recibí tu mensaje: "${userMsg.substring(0, 50)}"` };
     res.json({ success: true, data: result });
   } catch (err) { next(err); }
 };

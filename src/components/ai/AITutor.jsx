@@ -22,10 +22,10 @@ const AITutor = () => {
     setInput('');
     setLoading(true);
     try {
-      const res = await api.post('/ai/chat', { messages: [...messages, userMsg].map(m => ({ role: m.role, content: m.content })) });
-      setMessages(prev => [...prev, { role: 'assistant', content: res.data?.reply || 'No pude procesar tu consulta.' }]);
-    } catch {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Error de conexión. Intenta de nuevo.' }]);
+      const res = await api.post('/ai/chat', { messages: [{ role: 'user', content: input }] });
+      setMessages(prev => [...prev, { role: 'assistant', content: res.data?.reply || 'Error: ' + JSON.stringify(res).slice(0, 150) }]);
+    } catch (err) {
+      setMessages(prev => [...prev, { role: 'assistant', content: 'Error: ' + (err.message || 'conexión') }]);
     }
     setLoading(false);
   };

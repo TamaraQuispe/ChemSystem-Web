@@ -1,7 +1,7 @@
 const https = require('https');
 
 const API_KEY = process.env.OPENROUTER_API_KEY;
-const MODEL = 'google/gemini-2.0-flash-exp';
+const MODEL = 'meta-llama/llama-3.2-3b-instruct';
 
 function callOpenRouter(messages) {
   return new Promise((resolve, reject) => {
