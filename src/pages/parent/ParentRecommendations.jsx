@@ -34,13 +34,31 @@ const ParentRecommendations = () => {
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [insightData, setInsightData] = useState(null);
   const selectedChild = useParentStore((state) => state.selectedChild);
 
   const fetchData = () => {
     setLoading(true);
     setError(null);
     parentService.getRecommendations(selectedChild?.id)
-      .then(setRecommendations)
+      .then(async (recs) => {
+        setRecommendations(recs);
+        // Get AI recommendations
+        try {
+          const { default: api } = await import('../../services/api');
+          const dash = await api.get('/parent/dashboard' + (selectedChild?.id ? `?child_id=${selectedChild.id}` : ''));
+          if (dash.data?.kpis && dash.data?.student) {
+            const aiRes = await api.post('/ai/recommend', {
+              studentName: dash.data.student.name,
+              kpis: dash.data.kpis,
+              subjectProgress: dash.data.subjectProgress || [],
+            });
+            if (aiRes.data?.insights?.length > 0) {
+              setInsightData(aiRes.data);
+            }
+          }
+        } catch {}
+      })
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
   };
@@ -80,18 +98,18 @@ const ParentRecommendations = () => {
         transition={{ delay: 0.1 }}
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
       >
-        {insights.map((item, idx) => (
+        {(insightData?.insights || insights).map((item, idx) => (
           <motion.div
-            key={item.label}
+            key={item.label || idx}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 + idx * 0.05 }}
             className="bg-white rounded-3xl p-5 border border-gray-100 shadow-premium"
           >
-            <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center mb-3", item.bg)}>
-              <item.icon size={20} className={item.color} />
+            <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center mb-3", item.bg || 'bg-blue-50')}>
+              {item.icon ? <item.icon size={20} className={item.color || 'text-blue-500'} /> : <span className="text-lg">🤖</span>}
             </div>
-            <p className="text-xs font-bold text-text-secondary mb-0.5">{item.label}</p>
+            <p className="text-xs font-bold text-text-secondary mb-0.5">{item.label || 'Análisis IA'}</p>
             <p className="text-sm font-black text-primary-dark">{item.value}</p>
             <p className="text-[10px] font-semibold text-text-secondary mt-0.5">{item.detail}</p>
           </motion.div>

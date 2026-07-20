@@ -19,7 +19,19 @@ const TeacherPredictive = () => {
     setLoading(true);
     setError(null);
     teacherService.getPredictiveData(selectedClass.id)
-      .then(setData)
+      .then(async (d) => {
+        setData(d);
+        // Get AI suggestions
+        if (d?.atRisk?.length > 0) {
+          try {
+            const { default: api } = await import('../../services/api');
+            const res = await api.post('/ai/suggest', {
+              atRiskStudents: d.atRisk, className: selectedClass.name,
+            });
+            if (res.data?.length > 0) setData(prev => ({ ...prev, suggestions: res.data }));
+          } catch {}
+        }
+      })
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
   }, [selectedClass?.id]);
