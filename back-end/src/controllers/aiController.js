@@ -1,5 +1,6 @@
 const { AiRecommendation } = require('../models');
 const aiService = require('../services/aiService');
+const { getStudentContext } = require('../services/studentContextService');
 
 const getRecommendations = async (req, res, next) => {
   try {
@@ -7,6 +8,13 @@ const getRecommendations = async (req, res, next) => {
       where: { is_active: true }, order: [['priority', 'ASC']],
     });
     res.json({ success: true, data: recommendations });
+  } catch (err) { next(err); }
+};
+
+const getContext = async (req, res, next) => {
+  try {
+    const context = await getStudentContext(req.user.id);
+    res.json({ success: true, data: context });
   } catch (err) { next(err); }
 };
 
@@ -26,13 +34,25 @@ const chat = async (req, res, next) => {
     if (lastMsg.content.length > MAX_MESSAGE_LENGTH) {
       return res.status(400).json({ success: false, message: `El mensaje no puede exceder ${MAX_MESSAGE_LENGTH} caracteres` });
     }
+
     const limited = messages.slice(-MAX_HISTORY);
     const sanitized = limited.map(m => ({
       role: m.role === 'system' ? 'system' : m.role === 'assistant' ? 'assistant' : 'user',
       content: String(m.content).slice(0, MAX_MESSAGE_LENGTH),
     }));
-    const result = await aiService.chat(sanitized);
+
+    const context = await getStudentContext(req.user.id);
+    const result = await aiService.chat(sanitized, context);
     res.json({ success: true, data: result });
+  } catch (err) { next(err); }
+};
+
+const generateExercises = async (req, res, next) => {
+  try {
+    const count = Math.min(Math.max(parseInt(req.body.count) || 3, 1), 10);
+    const context = await getStudentContext(req.user.id);
+    const exercises = await aiService.generateExercises(context, count);
+    res.json({ success: true, data: exercises });
   } catch (err) { next(err); }
 };
 
@@ -50,4 +70,4 @@ const recommendForParent = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
-module.exports = { getRecommendations, chat, suggestInterventions, recommendForParent };
+module.exports = { getRecommendations, getContext, chat, generateExercises, suggestInterventions, recommendForParent };
