@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   TrendingUp, Target, Zap, Clock, AlertTriangle, RefreshCw, Trophy,
@@ -11,20 +12,20 @@ import api from '../../services/api';
 
 const MONTHS = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
-const BarChart = ({ data, height = 200 }) => {
+const BarChart = ({ data }) => {
   const max = Math.max(...data.map(d => d.value), 1);
   return (
-    <div className="flex items-end justify-between gap-2 h-full">
+    <div className="flex items-end justify-around gap-3" style={{ height: 180 }}>
       {data.map((d, i) => {
-        const pct = (d.value / max) * 100;
+        const pct = (d.value / max) * 180;
         const colors = ['bg-sky-100', 'bg-sky-200', 'bg-sky-300', 'bg-sky-400', 'bg-sky-500', 'bg-primary'];
         return (
-          <div key={i} className="flex-1 flex flex-col items-center gap-1 group">
-            <div className="relative w-full flex justify-center">
+          <div key={i} className="flex flex-col items-center gap-1 group" style={{ width: '12%' }}>
+            <div className="relative flex justify-center w-full">
               <div className={cn(
                 'w-full rounded-t-xl transition-all duration-500 group-hover:opacity-80',
                 colors[i % colors.length]
-              )} style={{ height: `${Math.max(pct, 4)}%` }} />
+              )} style={{ height: Math.max(pct, 4) }} />
               <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-[#1a1c1d] text-white text-[9px] py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
                 {d.value}%
               </div>
@@ -63,6 +64,7 @@ const SkillBar = ({ label, percent, color }) => (
 );
 
 const Analytics = () => {
+  const navigate = useNavigate();
   const [analytics, setAnalytics] = useState(null);
   const [dashboard, setDashboard] = useState(null);
   const [rankings, setRankings] = useState([]);
@@ -299,7 +301,7 @@ const Analytics = () => {
               <p className="text-xs opacity-90 mt-2 mb-4">
                 {dashboard?.achievements?.[0]?.rarity === 'legendary' ? 'Logro legendario desbloqueado.' : 'Sigue así para desbloquear más logros.'}
               </p>
-              <button className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-white/30 transition-colors">
+              <button onClick={() => navigate('/achievements')} className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest hover:bg-white/30 transition-colors">
                 Ver Logros
               </button>
             </div>

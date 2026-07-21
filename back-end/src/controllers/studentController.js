@@ -56,7 +56,30 @@ const updateProfile = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+const getConversations = async (req, res, next) => {
+  try {
+    const conversations = await studentService.getConversations(req.user.id);
+    res.json({ success: true, data: { conversations } });
+  } catch (err) { next(err); }
+};
+
+const getConversationMessages = async (req, res, next) => {
+  try {
+    const messages = await studentService.getConversationMessages(req.params.conversationId);
+    res.json({ success: true, data: { messages } });
+  } catch (err) { next(err); }
+};
+
+const sendMessage = async (req, res, next) => {
+  try {
+    const { content } = req.body;
+    const message = await studentService.sendMessage(req.user.id, req.params.conversationId, content);
+    res.json({ success: true, data: { message } });
+  } catch (err) { next(err); }
+};
+
 module.exports = {
   getDashboard, getProgress, completeLesson, completeQuiz,
   getQuizHistory, getAchievements, createAchievement, updateProfile,
+  getConversations, getConversationMessages, sendMessage,
 };

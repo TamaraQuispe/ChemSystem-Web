@@ -2,7 +2,7 @@ const { Op } = require('sequelize');
 const {
   User, UserAnalytics, UserModule, Module, Notification,
   QuizResult, Achievement, Experiment, CommunityPost,
-  Prediction, AiRecommendation
+  Prediction, AiRecommendation, Conversation, Message
 } = require('../models');
 
 async function getDashboard(userId) {
@@ -182,6 +182,73 @@ async function updateProfile(userId, data) {
   return User.findByPk(userId);
 }
 
+async function getConversations(userId) {
+  const conversations = await Conversation.findAll({
+    where: { student_id: userId },
+    include: [
+      { model: User, as: 'teacher', attributes: ['id', 'name', 'avatar_url'] },
+      { model: User, as: 'parent', attributes: ['id', 'name'] },
+      { model: Message, as: 'messages', separate: true, limit: 1, order: [['created_at', 'DESC']] },
+    ],
+    order: [['last_message_at', 'DESC']],
+  });
+  return conversations.map(c => {
+    const lastMsg = c.messages?.[0];
+    return {
+      id: c.id,
+      teacher: { id: c.teacher.id, name: c.teacher.name, avatar: c.teacher.avatar_url },
+      parent: c.parent ? { id: c.parent.id, name: c.parent.name } : null,
+      subject: c.subject,
+      lastMessage: lastMsg ? { content: lastMsg.content, time: formatTimeAgo(lastMsg.created_at) } : null,
+    };
+  });
+}
+
+async function getConversationMessages(conversationId) {
+  const messages = await Message.findAll({
+    where: { conversation_id: conversationId },
+    include: [{ model: User, as: 'sender', attributes: ['id', 'name', 'role'] }],
+    order: [['created_at', 'ASC']],
+  });
+  return messages.map(m => ({
+    id: m.id,
+    from: m.sender.role,
+    senderName: m.sender.name,
+    text: m.content,
+    time: formatTimeAgo(m.created_at),
+    createdAt: m.created_at,
+  }));
+}
+
+async function sendMessage(userId, conversationId, content) {
+  const conversation = await Conversation.findByPk(conversationId);
+  if (!conversation || conversation.student_id !== userId) {
+    throw new Error('No autorizado');
+  }
+  const message = await Message.create({
+    conversation_id: conversationId,
+    sender_id: userId,
+    content,
+  });
+  conversation.last_message_at = new Date();
+  await conversation.save();
+  try {
+    await Notification.create({
+      user_id: conversation.teacher_id,
+      title: 'Nuevo mensaje del estudiante',
+      message: content.substring(0, 120) + (content.length > 120 ? '...' : ''),
+      type: 'info',
+    });
+    await Notification.create({
+      user_id: conversation.parent_id,
+      title: 'Nuevo mensaje del estudiante',
+      message: content.substring(0, 120) + (content.length > 120 ? '...' : ''),
+      type: 'info',
+    });
+  } catch {}
+  return { id: message.id, content, from: 'student', time: 'Ahora' };
+}
+
 function generateWeeklyXp() {
   return [
     { day: 'L', xp: 55 }, { day: 'M', xp: 85 },
@@ -207,4 +274,5 @@ function formatTimeAgo(date) {
 module.exports = {
   getDashboard, getProgress, completeLesson, completeQuiz,
   getQuizHistory, getAchievements, createAchievement, updateProfile,
+  getConversations, getConversationMessages, sendMessage,
 };

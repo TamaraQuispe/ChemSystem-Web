@@ -112,21 +112,7 @@ const Simulators = () => {
               </p>
 
               <div className="flex gap-4 pt-2">
-                <button 
-                  onClick={() => {
-                    setSelectedDifficulty('Intermedio');
-                    startPractice();
-                  }}
-                  className="bg-[#004B76] hover:bg-[#003B5C] text-white font-black px-6 py-3 rounded-xl transition-all shadow-md active:scale-95 text-xs"
-                >
-                  Comenzar práctica recomendada
-                </button>
-                <button 
-                  onClick={startPractice}
-                  className="bg-white border border-gray-200 hover:bg-gray-50 text-gray-500 font-black px-6 py-3 rounded-xl transition-all active:scale-95 text-xs"
-                >
-                  Explorar otros niveles
-                </button>
+
               </div>
             </div>
 
