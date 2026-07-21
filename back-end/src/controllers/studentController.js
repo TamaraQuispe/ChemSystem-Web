@@ -65,7 +65,7 @@ const getConversations = async (req, res, next) => {
 
 const getConversationMessages = async (req, res, next) => {
   try {
-    const messages = await studentService.getConversationMessages(req.params.conversationId);
+    const messages = await studentService.getConversationMessages(req.params.conversationId, req.user.id);
     res.json({ success: true, data: { messages } });
   } catch (err) { next(err); }
 };

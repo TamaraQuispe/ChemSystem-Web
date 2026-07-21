@@ -192,19 +192,29 @@ async function getConversations(userId) {
     ],
     order: [['last_message_at', 'DESC']],
   });
-  return conversations.map(c => {
+  const results = [];
+  for (const c of conversations) {
+    const unread = await Message.count({
+      where: { conversation_id: c.id, is_read: false, sender_id: { [Op.ne]: userId } },
+    });
     const lastMsg = c.messages?.[0];
-    return {
+    results.push({
       id: c.id,
       teacher: { id: c.teacher.id, name: c.teacher.name, avatar: c.teacher.avatar_url },
       parent: c.parent ? { id: c.parent.id, name: c.parent.name } : null,
       subject: c.subject,
       lastMessage: lastMsg ? { content: lastMsg.content, time: formatTimeAgo(lastMsg.created_at) } : null,
-    };
-  });
+      unread,
+    });
+  }
+  return results;
 }
 
-async function getConversationMessages(conversationId) {
+async function getConversationMessages(conversationId, userId) {
+  const conversation = await Conversation.findByPk(conversationId, { attributes: ['student_id'] });
+  if (!conversation) { const e = new Error('Conversación no encontrada'); e.status = 404; throw e; }
+  if (conversation.student_id !== userId) { const e = new Error('No autorizado'); e.status = 403; throw e; }
+  await Message.update({ is_read: true }, { where: { conversation_id: conversationId, sender_id: { [Op.ne]: userId }, is_read: false } });
   const messages = await Message.findAll({
     where: { conversation_id: conversationId },
     include: [{ model: User, as: 'sender', attributes: ['id', 'name', 'role'] }],
@@ -217,14 +227,14 @@ async function getConversationMessages(conversationId) {
     text: m.content,
     time: formatTimeAgo(m.created_at),
     createdAt: m.created_at,
+    is_read: m.is_read,
   }));
 }
 
 async function sendMessage(userId, conversationId, content) {
   const conversation = await Conversation.findByPk(conversationId);
-  if (!conversation || conversation.student_id !== userId) {
-    throw new Error('No autorizado');
-  }
+  if (!conversation) { const e = new Error('Conversación no encontrada'); e.status = 404; throw e; }
+  if (conversation.student_id !== userId) { const e = new Error('No autorizado'); e.status = 403; throw e; }
   const message = await Message.create({
     conversation_id: conversationId,
     sender_id: userId,

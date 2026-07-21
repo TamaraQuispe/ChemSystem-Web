@@ -1,6 +1,8 @@
 const { Router } = require('express');
+const { body } = require('express-validator');
 const teacherController = require('../controllers/teacherController');
 const { authenticate, authorize } = require('../middlewares/auth');
+const validate = require('../middlewares/validate');
 
 const router = Router();
 
@@ -20,6 +22,7 @@ router.get('/classes/:classId/monitor', teacherController.getMonitorData);
 router.get('/classes/:classId/predictive', teacherController.getPredictiveData);
 router.get('/conversations', teacherController.getConversations);
 router.get('/conversations/:conversationId/messages', teacherController.getConversationMessages);
-router.post('/conversations/:conversationId/messages', teacherController.sendMessage);
+router.post('/conversations/:conversationId/messages', body('content').trim().notEmpty().isLength({ max: 2000 }), validate, teacherController.sendMessage);
+router.post('/conversations', teacherController.startConversation);
 
 module.exports = router;

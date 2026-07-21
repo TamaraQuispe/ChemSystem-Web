@@ -16,4 +16,5 @@ export const teacherService = {
   createClass: (data) => api.post('/teacher/classes', data).then(r => r.data.classroom),
   publishGrades: (classId) => api.post(`/teacher/classes/${classId}/grades/publish`).then(r => r.data),
   createAssignment: (classId, data) => api.post(`/teacher/classes/${classId}/assignments`, data).then(r => r.data.assignment),
+  startConversation: (parentId, studentId, subject) => api.post('/teacher/conversations', { parent_id: parentId, student_id: studentId, subject }).then(r => r.data.conversation),
 };

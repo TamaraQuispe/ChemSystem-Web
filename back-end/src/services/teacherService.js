@@ -227,18 +227,27 @@ async function getTeacherConversations(teacherId) {
     order: [['last_message_at', 'DESC']],
   });
 
-  return conversations.map(c => ({
-    id: c.id,
-    parent: { id: c.parent.id, name: c.parent.name, avatar: c.parent.avatar_url },
-    student: c.student ? { id: c.student.id, name: c.student.name } : null,
-    subject: c.subject,
-    lastMessage: c.messages?.[0] ? { content: c.messages[0].content, time: formatTimeAgo(c.messages[0].created_at) } : null,
-  }));
+  const results = [];
+  for (const c of conversations) {
+    const unread = await Message.count({
+      where: { conversation_id: c.id, is_read: false, sender_id: { [Op.ne]: teacherId } },
+    });
+    results.push({
+      id: c.id,
+      parent: { id: c.parent.id, name: c.parent.name, avatar: c.parent.avatar_url },
+      student: c.student ? { id: c.student.id, name: c.student.name } : null,
+      subject: c.subject,
+      lastMessage: c.messages?.[0] ? { content: c.messages[0].content, time: formatTimeAgo(c.messages[0].created_at) } : null,
+      unread,
+    });
+  }
+  return results;
 }
 
 async function sendMessage(teacherId, conversationId, content) {
   const conversation = await Conversation.findByPk(conversationId);
-  if (!conversation || conversation.teacher_id !== teacherId) throw new Error('No autorizado');
+  if (!conversation) { const e = new Error('Conversación no encontrada'); e.status = 404; throw e; }
+  if (conversation.teacher_id !== teacherId) { const e = new Error('No autorizado'); e.status = 403; throw e; }
   const message = await Message.create({ conversation_id: conversationId, sender_id: teacherId, content });
   conversation.last_message_at = new Date();
   await conversation.save();
@@ -249,11 +258,24 @@ async function sendMessage(teacherId, conversationId, content) {
       message: content.substring(0, 120) + (content.length > 120 ? '...' : ''),
       type: 'info',
     });
+    if (conversation.student_id) {
+      await Notification.create({
+        user_id: conversation.student_id,
+        title: 'Tu docente ha enviado un mensaje',
+        message: 'Revisa la sección de Colaboración Tripartita para ver el mensaje.',
+        type: 'info',
+      });
+    }
   } catch {}
   return { id: message.id, content, from: 'teacher', time: 'Ahora' };
 }
 
-async function getConversationMessages(conversationId) {
+async function getConversationMessages(conversationId, teacherId) {
+  const conversation = await Conversation.findByPk(conversationId, { attributes: ['teacher_id'] });
+  if (!conversation) { const e = new Error('Conversación no encontrada'); e.status = 404; throw e; }
+  if (conversation.teacher_id !== teacherId) { const e = new Error('No autorizado'); e.status = 403; throw e; }
+  // Mark messages from others as read
+  await Message.update({ is_read: true }, { where: { conversation_id: conversationId, sender_id: { [Op.ne]: teacherId }, is_read: false } });
   const messages = await Message.findAll({
     where: { conversation_id: conversationId },
     include: [{ model: User, as: 'sender', attributes: ['id', 'name', 'role'] }],
@@ -264,7 +286,16 @@ async function getConversationMessages(conversationId) {
     from: m.sender.role === 'teacher' ? 'teacher' : m.sender.role === 'student' ? 'student' : 'parent',
     text: m.content,
     time: formatTimeAgo(m.created_at),
+    is_read: m.is_read,
   }));
+}
+
+async function startConversation(teacherId, parentId, studentId, subject) {
+  const [conversation] = await Conversation.findOrCreate({
+    where: { parent_id: parentId, teacher_id: teacherId, student_id: studentId || null },
+    defaults: { parent_id: parentId, teacher_id: teacherId, student_id: studentId || null, subject: subject || 'Consulta General' },
+  });
+  return conversation;
 }
 
 function avg(arr) {
@@ -397,6 +428,6 @@ async function getClassroomOverview(teacherId, classroomId) {
 module.exports = {
   getDashboard, getClasses, getClassDetail, getGrades, updateGrade,
   getMonitorData, getPredictiveData, getTeacherConversations, sendMessage,
-  getConversationMessages, createClass, createAssignment, publishGrades,
+  getConversationMessages, startConversation, createClass, createAssignment, publishGrades,
   updateClassroom, getClassroomOverview,
 };

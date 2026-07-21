@@ -177,20 +177,29 @@ async function getConversations(parentId) {
     order: [['last_message_at', 'DESC']],
   });
 
-  return conversations.map(c => {
+  const results = [];
+  for (const c of conversations) {
+    const unread = await Message.count({
+      where: { conversation_id: c.id, is_read: false, sender_id: { [Op.ne]: parentId } },
+    });
     const lastMsg = c.messages?.[0];
-    return {
+    results.push({
       id: c.id,
       teacher: { id: c.teacher.id, name: c.teacher.name, avatar: c.teacher.avatar_url },
       student: c.student ? { id: c.student.id, name: c.student.name } : null,
       subject: c.subject,
       lastMessage: lastMsg ? { content: lastMsg.content, time: formatTimeAgo(lastMsg.created_at) } : null,
-      unread: 0,
-    };
-  });
+      unread,
+    });
+  }
+  return results;
 }
 
-async function getConversationMessages(conversationId) {
+async function getConversationMessages(conversationId, parentId) {
+  const conversation = await Conversation.findByPk(conversationId, { attributes: ['parent_id'] });
+  if (!conversation) { const e = new Error('Conversación no encontrada'); e.status = 404; throw e; }
+  if (conversation.parent_id !== parentId) { const e = new Error('No autorizado'); e.status = 403; throw e; }
+  await Message.update({ is_read: true }, { where: { conversation_id: conversationId, sender_id: { [Op.ne]: parentId }, is_read: false } });
   const messages = await Message.findAll({
     where: { conversation_id: conversationId },
     include: [{ model: User, as: 'sender', attributes: ['id', 'name', 'role'] }],
@@ -201,13 +210,14 @@ async function getConversationMessages(conversationId) {
     from: m.sender.role === 'parent' ? 'parent' : m.sender.role === 'student' ? 'student' : 'teacher',
     text: m.content,
     time: formatTimeAgo(m.created_at),
+    is_read: m.is_read,
   }));
 }
 
 async function sendMessage(parentId, conversationId, content) {
   const conversation = await Conversation.findByPk(conversationId);
-  if (!conversation) throw new Error('Conversación no encontrada');
-  if (conversation.parent_id !== parentId) throw new Error('No autorizado');
+  if (!conversation) { const e = new Error('Conversación no encontrada'); e.status = 404; throw e; }
+  if (conversation.parent_id !== parentId) { const e = new Error('No autorizado'); e.status = 403; throw e; }
 
   const message = await Message.create({
     conversation_id: conversationId,
@@ -225,6 +235,14 @@ async function sendMessage(parentId, conversationId, content) {
       message: content.substring(0, 120) + (content.length > 120 ? '...' : ''),
       type: 'info',
     });
+    if (conversation.student_id) {
+      await Notification.create({
+        user_id: conversation.student_id,
+        title: 'Tu padre/madre ha enviado un mensaje',
+        message: 'Revisa la sección de Colaboración Tripartita para ver el mensaje.',
+        type: 'info',
+      });
+    }
   } catch {}
 
   return { id: message.id, content, from: 'parent', time: 'Ahora' };
@@ -244,6 +262,12 @@ async function getTeachers(parentId) {
 }
 
 async function startConversation(parentId, teacherId, studentId, subject) {
+  if (studentId) {
+    const relation = await FamilyRelationship.findOne({
+      where: { parent_id: parentId, student_id: studentId },
+    });
+    if (!relation) { const e = new Error('El estudiante no está vinculado a este padre/madre'); e.status = 403; throw e; }
+  }
   const [conversation] = await Conversation.findOrCreate({
     where: { parent_id: parentId, teacher_id: teacherId, student_id: studentId || null },
     defaults: { parent_id: parentId, teacher_id: teacherId, student_id: studentId || null, subject: subject || 'Consulta General' },

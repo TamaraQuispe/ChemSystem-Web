@@ -41,10 +41,13 @@ const TeacherCommunity = () => {
     if (!newMessage.trim() || !selectedConv) return;
     const content = newMessage.trim();
     setNewMessage('');
-    setMessages(prev => [...prev, { id: Date.now(), from: 'teacher', text: content, time: 'Ahora' }]);
+    const tempId = Date.now();
+    setMessages(prev => [...prev, { id: tempId, from: 'teacher', text: content, time: 'Ahora' }]);
     try {
       await teacherService.sendMessage(selectedConv.id, content);
-    } catch { /* ignore */ }
+    } catch {
+      setMessages(prev => prev.map(m => m.id === tempId ? { ...m, error: true } : m));
+    }
   };
 
   if (loading) {
@@ -126,8 +129,10 @@ const TeacherCommunity = () => {
                   </div>
                 </div>
               </div>
-              <button className="px-4 py-2 bg-[#004b71] text-white rounded-xl text-xs font-bold transition-all active:scale-95 shadow-lg"
-                style={{ background: 'linear-gradient(135deg, #004b71 0%, #006494 100%)' }}>
+              {/* TODO: pendiente de definir alcance de "intervención urgente" */}
+              <button disabled
+                className="px-4 py-2 bg-[#004b71]/50 text-white/70 rounded-xl text-xs font-bold cursor-not-allowed"
+                style={{ background: 'linear-gradient(135deg, #004b71 0%, #006494 100%)', opacity: 0.5 }}>
                 Intervención Urgente
               </button>
             </div>
@@ -188,6 +193,7 @@ const TeacherCommunity = () => {
                             isParent ? 'bg-[#86f8c8]/40 rounded-tl-none' : 'bg-[#f8d8ff]/40 rounded-tl-none'
                           )}>
                             {msg.text}
+                            {msg.error && <p className="text-[10px] text-[#ba1a1a] font-bold mt-1">⚠ No se pudo enviar. Reintenta.</p>}
                           </div>
                         </div>
                       </div>

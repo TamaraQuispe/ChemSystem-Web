@@ -81,7 +81,7 @@ const createAssignment = async (req, res, next) => {
 
 const getConversationMessages = async (req, res, next) => {
   try {
-    const messages = await teacherService.getConversationMessages(req.params.conversationId);
+    const messages = await teacherService.getConversationMessages(req.params.conversationId, req.user.id);
     res.json({ success: true, data: { messages } });
   } catch (err) { next(err); }
 };
@@ -107,9 +107,17 @@ const getClassroomOverview = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+const startConversation = async (req, res, next) => {
+  try {
+    const { parent_id, student_id, subject } = req.body;
+    const conversation = await teacherService.startConversation(req.user.id, parent_id, student_id, subject);
+    res.json({ success: true, data: { conversation } });
+  } catch (err) { next(err); }
+};
+
 module.exports = {
   getDashboard, getClasses, getClassDetail, getGrades, updateGrade,
   getMonitorData, getPredictiveData, getConversations, sendMessage,
-  getConversationMessages, createClass, createAssignment, publishGrades,
+  getConversationMessages, startConversation, createClass, createAssignment, publishGrades,
   updateClassroom, getClassroomOverview,
 };
