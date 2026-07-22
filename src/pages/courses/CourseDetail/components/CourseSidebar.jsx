@@ -11,7 +11,7 @@ export const CourseSidebar = ({
   currentModuleId, currentLessonIdxInModule, totalLessonsInModule,
   moduleAssessments, showAssessment, finalExamState,
   modulesCompleted, totalModules, overallProgress,
-  onToggleModule, onSelectLesson, onStartAssessment, onClearLesson,
+  onToggleModule, onSelectLesson, onStartAssessment, onStartFinalExam, onClearLesson,
 }) => (
   <aside className="w-80 shrink-0 bg-surface-container-low border-r border-outline-variant/10 overflow-y-auto custom-scrollbar hidden lg:block">
     <div className="p-4">
@@ -146,12 +146,13 @@ export const CourseSidebar = ({
       </div>
 
       <div className="mt-6">
-        <button className={cn(
-          'w-full p-3 rounded-xl border-2 border-dashed transition-all group flex flex-col items-center text-center gap-1.5',
-          finalExamState?.unlocked
-            ? 'border-[#6c228c]/40 bg-[#6c228c]/5 hover:bg-[#6c228c]/10'
-            : 'border-gray-300 bg-gray-50'
-        )}>
+        <button onClick={() => finalExamState?.unlocked && onStartFinalExam?.()}
+          className={cn(
+            'w-full p-3 rounded-xl border-2 border-dashed transition-all group flex flex-col items-center text-center gap-1.5',
+            finalExamState?.unlocked
+              ? 'border-[#6c228c]/40 bg-[#6c228c]/5 hover:bg-[#6c228c]/10 cursor-pointer'
+              : 'border-gray-300 bg-gray-50 cursor-not-allowed'
+          )}>
           <Trophy size={22} className={finalExamState?.unlocked ? 'text-[#6c228c]' : 'text-gray-400'} />
           <span className="font-headline font-bold text-xs text-[#6c228c]">Examen Final</span>
           <p className="text-[10px] text-[#40484f]/60 leading-tight">

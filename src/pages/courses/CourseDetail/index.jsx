@@ -165,9 +165,15 @@ const CourseDetail = () => {
     clearLesson();
   }, [clearLesson]);
 
-  const handleBackFromAssessment = useCallback(() => {
-    setActiveAssessmentId(null);
-  }, []);
+  const handleStartFinalExam = useCallback(() => {
+    const exam = finalExamState?.exam;
+    if (!exam?.id) return;
+    setActiveAssessmentId(exam.id);
+    setShowModuleComplete(false);
+    setShowKnowledgeCheck(null);
+    setKnowledgeCheckResult(null);
+    clearLesson();
+  }, [finalExamState, clearLesson]);
 
   const handleGoToPractice = useCallback(() => {
     setShowModuleComplete(false);
@@ -203,6 +209,7 @@ const CourseDetail = () => {
         onToggleModule={toggleModule}
         onSelectLesson={handleSelectLesson}
         onStartAssessment={handleStartAssessment}
+        onStartFinalExam={handleStartFinalExam}
       />
 
       <div className="flex-grow overflow-y-auto px-8 lg:px-12 py-8 relative">
@@ -226,10 +233,12 @@ const CourseDetail = () => {
           />
         ) : activeAssessmentId ? (
           <AssessmentView
-            assessment={moduleAssessments[activeAssessmentId]?.[0]}
+            assessment={moduleAssessments[activeAssessmentId]?.[0] || finalExamState?.exam}
             onBack={handleBackFromAssessment}
             courseId={courseSlug}
+            courseTitle={course.title}
             moduleId={activeAssessmentId}
+            isFinalExam={activeAssessmentId === finalExamState?.exam?.id}
             lessons={modules.find(m => m.id === activeAssessmentId)?.lessons || []}
             onNavigateToLesson={handleSelectLesson}
           />
