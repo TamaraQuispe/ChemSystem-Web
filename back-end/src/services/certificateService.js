@@ -1,8 +1,12 @@
 const { Certificate, Course, CourseProgress, Assessment, AssessmentAttempt } = require('../models');
 
-async function generateCertificate(userId, courseId) {
-  const course = await Course.findByPk(courseId);
+async function generateCertificate(userId, courseIdOrSlug) {
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(courseIdOrSlug);
+  const course = isUUID
+    ? await Course.findByPk(courseIdOrSlug)
+    : await Course.findOne({ where: { slug: courseIdOrSlug } });
   if (!course) throw new Error('Curso no encontrado');
+  const courseId = course.id;
 
   const progress = await CourseProgress.findOne({ where: { user_id: userId, course_id: courseId } });
   if (!progress || !progress.final_exam_passed) {
