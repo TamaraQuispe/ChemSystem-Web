@@ -163,7 +163,10 @@ const CourseDetail = () => {
     setShowKnowledgeCheck(null);
     setKnowledgeCheckResult(null);
     clearLesson();
-  }, [clearLesson]);
+    if (moduleId && !moduleAssessments[moduleId]) {
+      fetchAssessment(moduleId);
+    }
+  }, [clearLesson, moduleAssessments, fetchAssessment]);
 
   const handleStartFinalExam = useCallback(() => {
     const exam = finalExamState?.exam;
@@ -234,7 +237,7 @@ const CourseDetail = () => {
         ) : activeAssessmentId ? (
           <AssessmentView
             assessment={moduleAssessments[activeAssessmentId]?.[0] || finalExamState?.exam}
-            onBack={handleBackFromAssessment}
+            onBack={() => setActiveAssessmentId(null)}
             courseId={courseSlug}
             courseTitle={course.title}
             moduleId={activeAssessmentId}
