@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '../../utils/cn';
 import { teacherService } from '../../services/teacherService';
 import { useTeacherStore } from '../../store/teacherStore';
+import api from '../../services/api';
 
 const SIMULATORS = [
   { id: 'organica', title: 'Química Orgánica', desc: 'Mecanismos de reacción, isomería y síntesis de compuestos complejos.', icon: '🧬', color: 'text-[#004b71]', bg: 'bg-primary/5' },
@@ -15,6 +16,10 @@ const NewPracticePage = () => {
   const { classes } = useTeacherStore();
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState({});
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [fileInfo, setFileInfo] = useState(null);
+  const fileInputRef = useRef(null);
 
   // Step 1 state
   const [selectedSim, setSelectedSim] = useState('organica');
@@ -181,13 +186,38 @@ const NewPracticePage = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-center border-2 border-dashed border-[#c0c7d0] rounded-[2rem] p-8 bg-white/30 cursor-pointer hover:bg-[#f3f3f4] transition-colors">
+                <div onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center justify-center border-2 border-dashed border-[#c0c7d0] rounded-[2rem] p-8 bg-white/30 cursor-pointer hover:bg-[#f3f3f4] transition-colors">
                   <div className="text-center">
                     <div className="w-14 h-14 rounded-full bg-[#e2e2e3] flex items-center justify-center mx-auto mb-3">
                       <svg className="w-6 h-6 text-[#707880]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
                     </div>
-                    <p className="text-sm font-medium text-[#40484f]">Adjuntar Guía PDF</p>
-                    <p className="text-xs text-[#707880] mt-1">Máx. 10MB</p>
+                    {fileInfo ? (
+                      <>
+                        <p className="text-sm font-bold text-[#004b71]">{fileInfo.name}</p>
+                        <p className="text-xs text-[#707880] mt-1">{(fileInfo.size / 1024 / 1024).toFixed(1)} MB · Subido ✓</p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm font-medium text-[#40484f]">Adjuntar archivo</p>
+                        <p className="text-xs text-[#707880] mt-1">PDF, Word, Excel, imágenes, video · Máx. 500 MB</p>
+                      </>
+                    )}
+                    <input ref={fileInputRef} type="file" hidden
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        setUploading(true);
+                        try {
+                          const res = await api.uploadFile('/upload', file, 'practices');
+                          setFileInfo(res.data);
+                          setUploadedFile(file);
+                        } catch (err) {
+                          alert(err.message);
+                        }
+                        setUploading(false);
+                      }} />
+                    {uploading && <p className="text-xs text-[#004b71] mt-2 font-bold animate-pulse">Subiendo archivo...</p>}
                   </div>
                 </div>
               </div>
