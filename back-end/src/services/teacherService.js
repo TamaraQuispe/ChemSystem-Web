@@ -337,6 +337,10 @@ async function createAssignment(classroomId, data) {
     type: data.type || 'task',
     due_date: data.due_date || null,
     max_score: data.max_score || 100,
+    file_url: data.file_url || null,
+    file_name: data.file_name || null,
+    file_size: data.file_size || null,
+    file_type: data.file_type || null,
   });
   return assignment;
 }

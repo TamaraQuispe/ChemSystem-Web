@@ -10,6 +10,10 @@ module.exports = (sequelize) => {
     due_date: { type: DataTypes.DATEONLY },
     max_score: { type: DataTypes.DECIMAL(5,2), defaultValue: 100 },
     is_published: { type: DataTypes.BOOLEAN, defaultValue: true },
+    file_url: { type: DataTypes.STRING(500) },
+    file_name: { type: DataTypes.STRING(255) },
+    file_size: { type: DataTypes.BIGINT },
+    file_type: { type: DataTypes.STRING(100) },
   }, {
     tableName: 'assignments',
     timestamps: true,

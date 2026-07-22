@@ -2,7 +2,8 @@ const { Op } = require('sequelize');
 const {
   User, UserAnalytics, UserModule, Module, Notification,
   QuizResult, Achievement, Experiment, CommunityPost,
-  Prediction, AiRecommendation, Conversation, Message
+  Prediction, AiRecommendation, Conversation, Message,
+  Enrollment, Classroom, Grade
 } = require('../models');
 
 async function getDashboard(userId) {
@@ -259,6 +260,31 @@ async function sendMessage(userId, conversationId, content) {
   return { id: message.id, content, from: 'student', time: 'Ahora' };
 }
 
+async function getGrades(userId) {
+  const enrollments = await Enrollment.findAll({
+    where: { student_id: userId },
+    include: [
+      { model: Classroom, as: 'classroom', attributes: ['id', 'name', 'subject'] },
+      { model: Grade, as: 'grades', where: { is_published: true }, required: false },
+    ],
+  });
+  return enrollments.map(e => ({
+    classroom: { id: e.classroom?.id, name: e.classroom?.name, subject: e.classroom?.subject },
+    grades: (e.grades || []).map(g => ({
+      id: g.id,
+      type: g.type,
+      score: g.score,
+      max_score: g.max_score,
+      weight: g.weight,
+      topic: g.topic,
+      published_at: g.published_at,
+    })),
+    average: e.grades?.length > 0
+      ? e.grades.reduce((s, g) => s + (g.score / g.max_score) * g.weight * 100, 0) / e.grades.reduce((s, g) => s + g.weight, 0)
+      : null,
+  }));
+}
+
 function generateWeeklyXp() {
   return [
     { day: 'L', xp: 55 }, { day: 'M', xp: 85 },
@@ -284,5 +310,5 @@ function formatTimeAgo(date) {
 module.exports = {
   getDashboard, getProgress, completeLesson, completeQuiz,
   getQuizHistory, getAchievements, createAchievement, updateProfile,
-  getConversations, getConversationMessages, sendMessage,
+  getConversations, getConversationMessages, sendMessage, getGrades,
 };

@@ -28,5 +28,6 @@ router.use('/student', require('./studentRoutes'));
 router.use('/courses', require('./courseRoutes'));
 router.use('/assessments', require('./assessmentRoutes'));
 router.use('/certificates', require('./certificateRoutes'));
+router.use('/upload', require('./uploadRoutes'));
 
 module.exports = router;

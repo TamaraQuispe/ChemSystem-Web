@@ -34,6 +34,25 @@ export const api = {
   patch: (endpoint, body) => api.request(endpoint, { method: 'PATCH', body: JSON.stringify(body) }),
   delete: (endpoint) => api.request(endpoint, { method: 'DELETE' }),
 
+  uploadFile: async (endpoint, file, folder = 'assignments') => {
+    const token = getToken();
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('folder', folder);
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const error = new Error(data.message || 'Error al subir archivo');
+      error.status = response.status;
+      throw error;
+    }
+    return data;
+  },
+
   async download(endpoint, filename) {
     const token = getToken();
     const response = await fetch(`${API_URL}${endpoint}`, {
