@@ -13,6 +13,7 @@ import { Card } from '../../components/ui/Card';
 import { cn } from '../../utils/cn';
 import { useAuthStore } from '../../store/authStore';
 import { useStudentStore } from '../../store/studentStore';
+import { studentService } from '../../services/studentService';
 
 const quickAccess = [
   { icon: GraduationCap, label: 'Cursos', path: '/modules', color: 'bg-primary/10 text-primary' },
@@ -24,8 +25,14 @@ const quickAccess = [
 const Home = () => {
   const { user } = useAuthStore();
   const { dashboardData, loading, fetchDashboard } = useStudentStore();
+  const [assignments, setAssignments] = React.useState([]);
+  const [selectedAssignment, setSelectedAssignment] = React.useState(null);
 
   useEffect(() => { fetchDashboard(); }, []);
+
+  useEffect(() => {
+    studentService.getAssignments().then(setAssignments).catch(() => {});
+  }, []);
 
   const defaultXp = [
     { day: 'L', xp: 55 }, { day: 'M', xp: 85 }, { day: 'X', xp: 35 },
@@ -122,6 +129,47 @@ const Home = () => {
             </motion.div>
           )}
 
+          {/* Pending Practices */}
+          {assignments.length > 0 && (
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}>
+              <Card className="p-6 border-primary/10">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-black text-primary-dark">Prácticas Pendientes</h2>
+                  <span className="text-[10px] font-bold text-primary">{assignments.length} prácticas</span>
+                </div>
+                <div className="space-y-3">
+                  {assignments.slice(0, 5).map(a => (
+                    <div key={a.id} className="flex items-start gap-3 p-3 bg-surface-container-low rounded-2xl hover:bg-surface-container transition-all">
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                        <FileText size={20} className="text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-primary-dark truncate">{a.title}</p>
+                        <p className="text-[10px] font-semibold text-text-secondary line-clamp-2">{a.description}</p>
+                        <div className="flex items-center gap-3 mt-1.5">
+                          {a.due_date && (
+                            <span className="flex items-center gap-1 text-[9px] font-bold text-text-secondary">
+                              <CalendarDays size={10} /> Ven: {new Date(a.due_date).toLocaleDateString('es', { day: '2-digit', month: 'short' })}
+                            </span>
+                          )}
+                          {a.file_name && (
+                            <span className="flex items-center gap-1 text-[9px] font-bold text-text-secondary">
+                              <FileText size={10} /> {a.file_name}
+                            </span>
+                          )}
+                        </div>
+                        <button onClick={() => setSelectedAssignment(a)}
+                          className="mt-2 text-[9px] font-bold text-primary hover:text-primary-dark transition-colors">
+                          Ver detalle →
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </motion.div>
+          )}
+
           {/* Recent Activity */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
             <Card className="p-6">
@@ -212,6 +260,83 @@ const Home = () => {
           </motion.div>
         </div>
       </div>
+
+      {/* Practice Detail Modal */}
+      {selectedAssignment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setSelectedAssignment(null)}>
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" />
+          <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+            onClick={e => e.stopPropagation()}
+            className="relative bg-white rounded-3xl shadow-2xl border border-outline-variant/10 max-w-lg w-full max-h-[80vh] overflow-y-auto p-8">
+            <button onClick={() => setSelectedAssignment(null)}
+              className="absolute top-4 right-4 p-2 hover:bg-surface-container rounded-xl transition-colors">
+              <span className="text-lg">✕</span>
+            </button>
+
+            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+              <FileText size={32} className="text-primary" />
+            </div>
+
+            <h3 className="text-2xl font-headline font-extrabold text-on-surface mb-2">{selectedAssignment.title}</h3>
+
+            {selectedAssignment.type && (
+              <span className="inline-block text-[9px] px-2 py-1 bg-secondary-container/40 text-on-secondary-container rounded-full font-bold uppercase tracking-wider mb-4">
+                {selectedAssignment.type === 'task' ? 'Tarea' : selectedAssignment.type === 'lab' ? 'Laboratorio' : selectedAssignment.type === 'exam' ? 'Examen' : selectedAssignment.type}
+              </span>
+            )}
+
+            <div className="space-y-4 mt-4">
+              <div>
+                <p className="text-xs font-bold text-on-surface-variant/60 uppercase tracking-wider mb-1">Descripción</p>
+                <p className="text-sm text-on-surface leading-relaxed whitespace-pre-wrap">{selectedAssignment.description}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {selectedAssignment.due_date && (
+                  <div className="bg-surface-container-low rounded-xl p-4">
+                    <p className="text-[9px] font-bold text-on-surface-variant/60 uppercase tracking-wider mb-1">Fecha Límite</p>
+                    <p className="text-sm font-bold text-on-surface">
+                      {new Date(selectedAssignment.due_date).toLocaleDateString('es', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </p>
+                  </div>
+                )}
+                {selectedAssignment.max_score && (
+                  <div className="bg-surface-container-low rounded-xl p-4">
+                    <p className="text-[9px] font-bold text-on-surface-variant/60 uppercase tracking-wider mb-1">Puntaje Máximo</p>
+                    <p className="text-sm font-bold text-on-surface">{selectedAssignment.max_score}</p>
+                  </div>
+                )}
+                {selectedAssignment.file_url && (
+                  <div className="bg-surface-container-low rounded-xl p-4 col-span-2">
+                    <p className="text-[9px] font-bold text-on-surface-variant/60 uppercase tracking-wider mb-1">Archivo Adjunto</p>
+                    <a href={selectedAssignment.file_url} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-2 text-sm font-bold text-primary hover:underline">
+                      <FileText size={16} />
+                      {selectedAssignment.file_name || 'Descargar archivo'}
+                      <span className="text-[10px] text-on-surface-variant font-medium ml-auto">
+                        {selectedAssignment.file_size ? `${(selectedAssignment.file_size / 1024 / 1024).toFixed(1)} MB` : ''}
+                      </span>
+                    </a>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="mt-6 pt-6 border-t border-outline-variant/10 flex gap-3">
+              {selectedAssignment.file_url && (
+                <a href={selectedAssignment.file_url} target="_blank" rel="noopener noreferrer"
+                  className="flex-1 px-6 py-3 bg-primary text-on-primary rounded-2xl font-bold text-sm text-center hover:opacity-90 transition-all">
+                  Descargar Archivo
+                </a>
+              )}
+              <button onClick={() => setSelectedAssignment(null)}
+                className="flex-1 px-6 py-3 bg-surface-container-high text-on-surface rounded-2xl font-bold text-sm hover:bg-surface-variant transition-all">
+                Cerrar
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };
