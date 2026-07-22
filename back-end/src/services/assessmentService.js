@@ -56,6 +56,14 @@ async function submitAssessment(userId, assessmentId, data) {
     });
   }
 
+  // If final exam passed, mark it in CourseProgress
+  if (assessment.type === 'final_exam' && assessment.course_id && passed) {
+    await CourseProgress.update(
+      { final_exam_passed: true, final_exam_attempted: true },
+      { where: { user_id: userId, course_id: assessment.course_id } }
+    );
+  }
+
   const attempt = await AssessmentAttempt.create({
     user_id: userId,
     assessment_id: assessmentId,
