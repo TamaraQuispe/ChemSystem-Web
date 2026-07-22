@@ -10,6 +10,7 @@ export const studentService = {
   createAchievement: (data) => api.post('/student/achievements', data).then(r => r.data.achievement),
   updateProfile: (data) => api.patch('/student/profile', data).then(r => r.data.user),
   getGrades: () => api.get('/student/grades').then(r => r.data.grades),
+  getAssignments: () => api.get('/student/assignments').then(r => r.data.assignments),
   getConversations: () => api.get('/student/conversations').then(r => r.data.conversations),
   getConversationMessages: (conversationId) => api.get(`/student/conversations/${conversationId}/messages`).then(r => r.data.messages),
   sendMessage: (conversationId, content) => api.post(`/student/conversations/${conversationId}/messages`, { content }).then(r => r.data.message),

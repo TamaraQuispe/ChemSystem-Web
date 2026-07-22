@@ -13,7 +13,8 @@ const SIMULATORS = [
 
 const NewPracticePage = () => {
   const navigate = useNavigate();
-  const { classes } = useTeacherStore();
+  const { classes, fetchClasses } = useTeacherStore();
+  React.useEffect(() => { fetchClasses(); }, []);
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState({});
   const [uploadedFile, setUploadedFile] = useState(null);
@@ -56,16 +57,44 @@ const NewPracticePage = () => {
     if (s === 3) {
       const anySelected = Object.values(selectedGroups).some(v => v);
       if (!anySelected) newErrors.groups = 'Selecciona al menos un grupo';
-      if (!dueDate) newErrors.date = 'Selecciona una fecha límite';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (!validateStep(step)) return;
-    if (step < 3) setStep(s => s + 1);
-    else alert('¡Práctica creada con éxito!');
+    if (step < 3) { setStep(s => s + 1); return; }
+    // Step 3: actually create and publish
+    const classIds = Object.keys(selectedGroups).filter(k => selectedGroups[k]);
+    if (classIds.length === 0) { alert('Selecciona al menos un grupo/curso'); return; }
+    setUploading(true);
+    let fileData = null;
+    if (uploadedFile && !fileInfo) {
+      try {
+        const res = await api.uploadFile('/upload', uploadedFile, 'practices');
+        fileData = res.data;
+      } catch (err) { alert('Error al subir archivo: ' + err.message); setUploading(false); return; }
+    } else if (fileInfo) {
+      fileData = fileInfo;
+    }
+    try {
+      for (const classId of classIds) {
+        await teacherService.createAssignment(classId, {
+          title: topic || `${selectedSim} - Práctica`,
+          description: `Tema: ${topic}\nObjetivos: ${objectives}\nDificultad: ${difficulty}${fileData ? `\n\nArchivo adjunto: ${fileData.name}` : ''}`,
+          type: 'task',
+          due_date: dueDate || null,
+          file_url: fileData?.url || null,
+          file_name: fileData?.name || null,
+          file_size: fileData?.size || null,
+          file_type: fileData?.type || null,
+        });
+      }
+      alert(`✅ Práctica publicada en ${classIds.length} grupo(s) exitosamente`);
+      navigate('/teacher/dashboard');
+    } catch (err) { alert('Error al crear la práctica: ' + err.message); }
+    setUploading(false);
   };
 
   const handlePrev = () => {
@@ -421,11 +450,7 @@ const NewPracticePage = () => {
                     <h3 className="font-headline font-bold text-xl text-[#1a1c1d]">Seleccionar Grupos</h3>
                   </div>
                   <div className="space-y-3">
-                    {(classes.length > 0 ? classes : [
-                      { id: 1, name: 'Química Orgánica II-A', code: 'QA' },
-                      { id: 2, name: 'Laboratorio Avanzado B', code: 'LB' },
-                      { id: 3, name: 'Teoría Cuántica I', code: 'TC', disabled: true },
-                    ]).map((c, i) => (
+                    {(classes.length > 0 ? classes : []).map((c, i) => (
                       <div key={c.id} className={cn("flex items-center justify-between p-4 rounded-2xl transition-all cursor-pointer",
                         c.disabled ? 'opacity-60 bg-[#f3f3f4]/30' : 'bg-[#f3f3f4]/50 hover:bg-[#f3f3f4] group'
                       )} onClick={() => {
@@ -435,10 +460,10 @@ const NewPracticePage = () => {
                         <div className="flex items-center gap-4">
                           <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center font-bold",
                             i === 0 ? 'bg-[#86f8c8] text-[#007352]' : i === 1 ? 'bg-[#cbe6ff] text-[#004b71]' : 'bg-[#e2e2e3] text-[#40484f]'
-                          )}>{c.code || c.name.charAt(0).toUpperCase()}</div>
+                          )}>{c.name?.charAt(0).toUpperCase() || '?'}</div>
                           <div>
                             <h4 className={cn("font-bold", c.disabled ? 'text-[#40484f]/60' : 'text-[#1a1c1d]')}>{c.name}</h4>
-                            <p className="text-xs text-[#40484f]">{c.disabled ? 'Curso completado' : `${Math.floor(Math.random() * 15) + 20} estudiantes`}</p>
+                            <p className="text-xs text-[#40484f]">{c.disabled ? 'Curso completado' : `${c.enrollments?.length || 0} estudiantes`}</p>
                           </div>
                         </div>
                         <input type="checkbox" checked={selectedGroups[c.id] || false} disabled={c.disabled}

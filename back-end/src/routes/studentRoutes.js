@@ -17,6 +17,7 @@ router.get('/achievements', studentController.getAchievements);
 router.post('/achievements', studentController.createAchievement);
 router.patch('/profile', studentController.updateProfile);
 router.get('/grades', studentController.getGrades);
+router.get('/assignments', studentController.getAssignments);
 router.get('/conversations', studentController.getConversations);
 router.get('/conversations/:conversationId/messages', studentController.getConversationMessages);
 router.post('/conversations/:conversationId/messages', body('content').trim().notEmpty().isLength({ max: 2000 }), validate, studentController.sendMessage);

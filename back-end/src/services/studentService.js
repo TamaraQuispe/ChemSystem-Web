@@ -3,7 +3,7 @@ const {
   User, UserAnalytics, UserModule, Module, Notification,
   QuizResult, Achievement, Experiment, CommunityPost,
   Prediction, AiRecommendation, Conversation, Message,
-  Enrollment, Classroom, Grade
+  Enrollment, Classroom, Grade, Assignment
 } = require('../models');
 
 async function getDashboard(userId) {
@@ -260,6 +260,32 @@ async function sendMessage(userId, conversationId, content) {
   return { id: message.id, content, from: 'student', time: 'Ahora' };
 }
 
+async function getAssignments(userId) {
+  const enrollments = await Enrollment.findAll({
+    where: { student_id: userId },
+    include: [{ model: Classroom, as: 'classroom', attributes: ['id', 'name', 'subject'] }],
+  });
+  const classroomIds = enrollments.map(e => e.classroom_id).filter(Boolean);
+  if (classroomIds.length === 0) return [];
+  const assignments = await Assignment.findAll({
+    where: { classroom_id: classroomIds, is_published: true },
+    order: [['created_at', 'DESC']],
+  });
+  return assignments.map(a => ({
+    id: a.id,
+    title: a.title,
+    description: a.description,
+    type: a.type,
+    due_date: a.due_date,
+    max_score: a.max_score,
+    file_url: a.file_url,
+    file_name: a.file_name,
+    file_size: a.file_size,
+    file_type: a.file_type,
+    created_at: a.created_at,
+  }));
+}
+
 async function getGrades(userId) {
   const enrollments = await Enrollment.findAll({
     where: { student_id: userId },
@@ -310,5 +336,5 @@ function formatTimeAgo(date) {
 module.exports = {
   getDashboard, getProgress, completeLesson, completeQuiz,
   getQuizHistory, getAchievements, createAchievement, updateProfile,
-  getConversations, getConversationMessages, sendMessage, getGrades,
+  getConversations, getConversationMessages, sendMessage, getGrades, getAssignments,
 };

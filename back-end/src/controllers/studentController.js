@@ -85,8 +85,15 @@ const getGrades = async (req, res, next) => {
   } catch (err) { next(err); }
 };
 
+const getAssignments = async (req, res, next) => {
+  try {
+    const assignments = await studentService.getAssignments(req.user.id);
+    res.json({ success: true, data: { assignments } });
+  } catch (err) { next(err); }
+};
+
 module.exports = {
   getDashboard, getProgress, completeLesson, completeQuiz,
   getQuizHistory, getAchievements, createAchievement, updateProfile,
-  getConversations, getConversationMessages, sendMessage, getGrades,
+  getConversations, getConversationMessages, sendMessage, getGrades, getAssignments,
 };
